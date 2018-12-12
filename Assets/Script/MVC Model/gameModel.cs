@@ -13,6 +13,8 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
     [SerializeField]
     GridLayout gridLayout;
 
+    public int delayer;
+
     // Use this for initialization
     void Start () {
     }
@@ -42,6 +44,11 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
         res.y = Random.Range(-7,6);
         return res;
     }
+    
+    public float twoPointAngles(Vector3 p1,Vector3 p2) {
+        float angleDeg = Mathf.Atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Mathf.PI;
+        return angleDeg;
+    }
 
     public bool checkNextToIsWall(Vector3Int mapV3) {
         Vector3Int[] nexttoList = new Vector3Int[ 4 ];
@@ -69,6 +76,12 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
             return true;
         }
         return false;
+    }
+
+    public void delayerValUpdate() {
+        int numberOfAnt = gameController.instance.ant.Count;
+
+        delayer = numberOfAnt / 300;
     }
 
 }

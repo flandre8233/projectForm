@@ -10,34 +10,59 @@ public static class pathfinding {
         Right
     }
 
+    enum pathfindingMethod {
+        Diffusion,
+        straightLine
+    }
+
+    static pathfindingMethod curPathfindingMethod = pathfindingMethod.straightLine;
+
     static List<Vector3Int> outputData = new List<Vector3Int>();
     static List<Vector3IntPathDir>  checker = new List<Vector3IntPathDir>();
     static bool isFindEnd = false;
 
-
-    public static List<Vector3IntPathDir> StartBakeAllFloorToSource(Vector3Int bakeCenter, Vector3Int endPoint) {
-        return BakeAllFloor(bakeCenter, endPoint);
-    }
-
+    //從這裡開始進行pathfinding
     public static List<Vector3Int> StartBakeAllFloorToVector3Int(Vector3Int bakeCenter, Vector3Int endPoint) {
+
         BakeAllFloor(bakeCenter, endPoint);
+        switch (curPathfindingMethod) {
+            case pathfindingMethod.Diffusion:
+                return compositionRightPath(bakeCenter);
+            case pathfindingMethod.straightLine:
+                List<Vector3Int> finalOutputData = new List<Vector3Int>();
+                for (int i = 1; i < outputData.Count; i++) {
+                    finalOutputData.Add(outputData[i]);
+                }
+                return finalOutputData;
+        }
+
         return compositionRightPath(bakeCenter);
     }
 
-    static List<Vector3IntPathDir>  BakeAllFloor(Vector3Int bakeCenter, Vector3Int endPoint) {
+    static List<Vector3IntPathDir>BakeAllFloor(Vector3Int bakeCenter, Vector3Int endPoint) {
         outputData.Clear();
         checker.Clear();
         isFindEnd = false;
 
         outputData.Add(bakeCenter);
-        Recursive(outputData, bakeCenter, endPoint);
-
+        switch (curPathfindingMethod) {
+            case pathfindingMethod.Diffusion:
+                DiffusionRecursive(outputData, bakeCenter, endPoint);
+                break;
+            case pathfindingMethod.straightLine:
+                straightRecursive(outputData[ outputData.Count - 1 ], endPoint);
+                break;
+        }
         return checker;
     }
 
-    static List<Vector3Int>  Recursive(List<Vector3Int> loopArray, Vector3Int bakeCenter, Vector3Int endPoint) {
+
+
+    //遞迴
+    static List<Vector3Int> DiffusionRecursive(List<Vector3Int> loopArray, Vector3Int bakeCenter, Vector3Int endPoint) {
 
         if (loopArray.Count <= 0) {
+            Debug.Log("count = 0");
             return null;
         }
 
@@ -54,14 +79,24 @@ public static class pathfinding {
 
         }
 
-        return Recursive(nextLoopGroundArray, bakeCenter, endPoint);
+        return DiffusionRecursive(nextLoopGroundArray, bakeCenter, endPoint);
     }
 
-    static List<Vector3Int> neighborArray = new List<Vector3Int>();
+    static void straightRecursive(Vector3Int objectPos, Vector3Int endPoint) {
+        outputData.Add(straightLinePathfindingMainCode (objectPos, endPoint) );
+        if (!isFindEnd) {
+            straightRecursive(outputData[ outputData.Count - 1 ], endPoint);
+        }
+    }
+
+        static List<Vector3Int> neighborArray = new List<Vector3Int>();
 
     static List<Vector3Int>  getNeighbor(Vector3Int objectPos, Vector3Int bakeCenter, Vector3Int endPoint) {
-        //Vector3Int point = objectPos;
-        //List<Vector3Int> neighborArray = new List<Vector3Int>();
+        //default pathfinding main code
+        return DiffusionGetNeighbor(objectPos, bakeCenter, endPoint);
+    }
+
+    static List<Vector3Int> DiffusionGetNeighbor(Vector3Int objectPos, Vector3Int bakeCenter, Vector3Int endPoint) {
         neighborArray.Clear();
         Vector3Int[] dirArray = new Vector3Int[ 4 ];
         dirArray[ 0 ] = objectPos;
@@ -95,7 +130,7 @@ public static class pathfinding {
 
 
             item.Vector3Int = Vector3Int;
- 
+
             switch (i) {
                 case 0:
                     item.direction = Direction.Up;
@@ -109,7 +144,7 @@ public static class pathfinding {
                 case 3:
                     item.direction = Direction.Right;
                     break;
-   
+
             }
 
             checker.Add(item);
@@ -122,8 +157,35 @@ public static class pathfinding {
             }
 
         }
-        //objectPos.alreadyFindAllNeighbor = true;
         return neighborArray;
+    }
+
+    static Vector3Int straightLinePathfindingMainCode(Vector3Int objectPos, Vector3Int endPoint) {
+        //沒有牆壁碰撞系統
+        neighborArray.Clear();
+        Vector3Int nextFootStep = objectPos;
+        float angleDeg = Mathf.Atan2(endPoint.y - nextFootStep.y, endPoint.x - nextFootStep.x) * 180 / Mathf.PI;
+        if (angleDeg <= 45f && angleDeg > -45f) {
+            //右
+            nextFootStep.x += 1;
+        } else if (angleDeg <= -45f && angleDeg > -135f) {
+            //下
+            nextFootStep.y -= 1;
+        } else if (angleDeg <= -135f || angleDeg > 135f) {
+            //左
+            nextFootStep.x -= 1;
+        } else {
+            //上
+            nextFootStep.y += 1;
+        }
+        
+
+        if (nextFootStep == endPoint) {
+            isFindEnd = true;
+
+        }
+
+        return nextFootStep;
     }
 
     static bool  InquireAlreadyCheck(Vector3Int Vector3Int) {

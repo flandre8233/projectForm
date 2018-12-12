@@ -4,26 +4,23 @@ using UnityEngine;
 
 
 public class Ant : MonoBehaviour {
-
-
-
     Vector3 pos;
     public float speed = 2.0f;
 
-    Rigidbody2D rigidbody2D;
-
-    public List<Vector3Int> pathfindedList;
+    [SerializeField]
+    public List<Vector3Int> pathfindedListInt;
+    public List<Vector3> pathfindedList;
 
     vector3Lerp vector3Lerp = new vector3Lerp();
+    
 
     // Use this for initialization
     void Start () {
         globalUpdateManager.instance.registerUpdateDg(ToUpdate);
         pos = transform.position; // Take the current position
-        rigidbody2D = GetComponent<Rigidbody2D>();
 
         findNewPath();
-        StartCoroutine(enumerator());
+        startLerpToDestination();
     }
 
     private void OnDestroy() {
@@ -45,12 +42,20 @@ public class Ant : MonoBehaviour {
 
     void toDestination() {
         if (vector3Lerp.isLerping) {
+            Vector3 toTargetVector = pathfindedList[ 0 ] - transform.position;
+            float zRotation = Mathf.Atan2(toTargetVector.y, toTargetVector.x) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(new Vector3(0, 0, zRotation+-90));
+
             transform.position = vector3Lerp.update();
+
+         
         }
     }
 
     public void startLerpToDestination() {
-        vector3Lerp.startLerp(transform.position, gameModel.instance.mapV3ToWorldPos(pathfindedList[ 0 ] ) , 0.3f , null, onArrivalsDestination);
+        vector3Lerp.startLerp(transform.position, pathfindedList[ 0 ]  , 0.3f , null, onArrivalsDestination);
+
+        //面向角度
     }
 
     void onArrivalsDestination() {
@@ -68,9 +73,21 @@ public class Ant : MonoBehaviour {
     }
 
     void findNewPath() {
+        pathfindedListInt.Clear();
         pathfindedList.Clear();
 
-        pathfindedList = pathfinding.StartBakeAllFloorToVector3Int(gameModel.instance.charWorldToMapV3(transform), getNextMoveableDestination());
+        pathfindedListInt = pathfinding.StartBakeAllFloorToVector3Int(gameModel.instance.charWorldToMapV3(transform), getNextMoveableDestination());
+        //轉為世界坐標
+        for (int i = 0; i < pathfindedListInt.Count; i++) {
+            pathfindedList.Add(gameModel.instance.mapV3ToWorldPos(pathfindedListInt[ i]));
+        }
+        //將最後目的地變得有點亂數
+        Vector3 lastOneV3 = pathfindedList[ pathfindedList.Count - 1 ];
+        lastOneV3.x = pathfindedList[ pathfindedList.Count - 1 ].x + Random.Range(-0.5f,0.5f);
+        lastOneV3.y = pathfindedList[ pathfindedList.Count - 1 ].y + Random.Range(-0.5f, 0.5f);
+        pathfindedList[ pathfindedList.Count - 1 ] = lastOneV3;
+
+
         if (pathfindedList.Count <= 0) {
             findNewPath();
         }
@@ -86,25 +103,9 @@ public class Ant : MonoBehaviour {
 
     IEnumerator enumerator() {
 
-        yield return new WaitForSeconds(Random.Range(1,2) );
+        yield return new WaitForSeconds(Random.Range(7 + gameModel.instance.delayer, 15 + gameModel.instance.delayer) );
 
         startLerpToDestination();
-    }
-
-    void basedMovement() {
-        if (Input.GetKey(KeyCode.A)) {           //(-1,0)
-            pos += Vector3.left * 1 * Time.deltaTime;// Add -1 to pos.x
-        }
-        if (Input.GetKey(KeyCode.D)) {           //(1,0)
-            pos += Vector3.right * 1 * Time.deltaTime;// Add 1 to pos.x
-        }
-        if (Input.GetKey(KeyCode.W)) {           //(0,1)
-            pos += Vector3.up * 1 * Time.deltaTime; // Add 1 to pos.y
-        }
-        if (Input.GetKey(KeyCode.S)) {           //(0,-1)
-            pos += Vector3.down * 1 * Time.deltaTime;// Add -1 to pos.y
-        }
-        rigidbody2D.position = Vector3.MoveTowards(transform.position, pos, speed * Time.deltaTime);    // Move there
     }
 
 }
