@@ -104,7 +104,7 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
         if (count <= 0) {
             return null;
         }
-        return ants[ Random.Range(0,ants.Count-1) ];
+        return ants[ Random.Range(0, count - 1) ];
     }
 
     public Ant checkAntInThisWall(Vector2Int mapV3) {

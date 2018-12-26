@@ -49,9 +49,6 @@ public class Ant : MonoBehaviour {
     // Use this for initialization
     void Start () {
         globalUpdateManager.instance.registerUpdateDg(ToUpdate);
-        if (InMapV3Pos == new Vector2Int()) {
-            print("??");
-        }
         findNewPath();
         startLerpToDestination();
         runSpeed = Random.Range(0.2f,0.4f);
@@ -136,18 +133,6 @@ public class Ant : MonoBehaviour {
         
 
         //查閱當前方格是否存在敵人
-        /*
-        floorData floorData = gameModel.instance.getFloorDatas(InMapV3Pos);
-        if (isFriendly) {
-            if (floorData.enemyAnts.Count > 0) {
-                targetEnemy = gameModel.instance.checkAnt_EnemyInThisWall(InMapV3Pos);
-            }
-        } else {
-            if (floorData.ants.Count > 0) {
-                targetEnemy = gameModel.instance.checkAntInThisWall(InMapV3Pos);
-            }
-        }
-        */
     }
 
     void attackCD() {
@@ -193,6 +178,7 @@ public class Ant : MonoBehaviour {
     public void OnAttackTargetAntDead() {
         EnemyAnt = null;
         inAttackRange = false;
+        firstTimeFindEnemy = false;
     }
 
     public void OnUnderAttackOtherAnts(int TakeDamage,Ant from) {
@@ -200,6 +186,12 @@ public class Ant : MonoBehaviour {
         if (HP <= 0) {
             alreadyDead = true;
             from.OnAttackTargetAntDead();
+            return;
+        }
+
+        if (!EnemyAnt) {
+            EnemyAnt = from;
+            inAttackRange = true;
         }
     }
 
