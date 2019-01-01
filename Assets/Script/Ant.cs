@@ -178,7 +178,6 @@ public class Ant : MonoBehaviour {
     public void OnAttackTargetAntDead() {
         EnemyAnt = null;
         inAttackRange = false;
-        firstTimeFindEnemy = false;
     }
 
     public void OnUnderAttackOtherAnts(int TakeDamage,Ant from) {

@@ -134,7 +134,7 @@ public class gameController : SingletonMonoBehavior<gameController> {
 
 
     void ToUpdate() {
-        //autoSpawn();
+        autoSpawn();
         keyboardTest();
         
     }
@@ -147,18 +147,20 @@ public class gameController : SingletonMonoBehavior<gameController> {
     void autoSpawn() {
         timer1 += globalVarManager.deltaTime;
         timer2 += globalVarManager.deltaTime;
+        float max1 = (gameModel.instance.ant_enemyList.Count + 1) /( gameModel.instance.antList.Count + 1) ;
+        float max2 = ( gameModel.instance.antList.Count + 1) / (gameModel.instance.ant_enemyList.Count + 1) ;
         if (timer1 - 0.5f > 0) {
             timer1 = 0;
-            for (int i = 0; i < spawnNumber; i++) {
-                gameModel.instance.antList.Add(Instantiate(antPrefabs, new Vector3(3, 0, 0), Quaternion.identity).GetComponent<Ant>());
+            for (int i = 0; i < spawnNumber * max1; i++) {
+                gameModel.instance.antList.Add(Instantiate(antPrefabs, new Vector3(1, 0, 0), Quaternion.identity).GetComponent<Ant>());
                 gameModel.instance.delayerValUpdate();
             }
          
         }
         if (timer2 - 0.5f > 0) {
             timer2 = 0;
-            for (int i = 0; i < spawnNumber; i++) {
-                gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs, new Vector3(18, 0, 0), Quaternion.identity).GetComponent<Ant>());
+            for (int i = 0; i < spawnNumber * max2; i++) {
+                gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs, new Vector3(21, 0, 0), Quaternion.identity).GetComponent<Ant>());
                 gameModel.instance.delayerValUpdate();
             }
    
