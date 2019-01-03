@@ -89,8 +89,8 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
 
     public Vector2Int genRandomMapV3() {
         Vector2Int res = new Vector2Int();
-        res.x = Random.Range(1,20);
-        res.y = Random.Range(-7,6);
+        res.x = Random.Range(1,21);
+        res.y = Random.Range(-7,7);
         return res;
     }
     

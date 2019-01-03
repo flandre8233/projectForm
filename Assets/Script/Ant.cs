@@ -130,7 +130,21 @@ public class Ant : MonoBehaviour {
             inAttackRange = gameModel.instance.Vector2IntEquality(EnemyAnt.InMapV3Pos, InMapV3Pos);
         }
 
-        
+
+        if (!inAttackRange) {
+            Ant SecEnemyAnt;
+            if (isFriendly) {
+                SecEnemyAnt = gameModel.instance.checkAnt_EnemyInThisWall(InMapV3Pos);
+            } else {
+                SecEnemyAnt = gameModel.instance.checkAntInThisWall(InMapV3Pos);
+            }
+
+            if (SecEnemyAnt) {
+                EnemyAnt = SecEnemyAnt;
+                Destination = EnemyAnt.InMapV3Pos;
+                inAttackRange = true;
+            }
+        }
 
         //查閱當前方格是否存在敵人
     }
