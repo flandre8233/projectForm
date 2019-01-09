@@ -25,7 +25,9 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
 
 
     public int mapRadius = 40;
-    public Vector2Int dungeonHeartV2Point = new Vector2Int(10, -1);
+    public Vector2Int dungeonHeartV2Point;
+
+    //public Vector2Int dungeonHeartV2Point = new Vector2Int(10, -1);
 
     public int resource;
 
@@ -67,13 +69,9 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
     }
 
     public void smellDissipate() {
-        int minX = 1;
-        int maxX = 20;
-        int minY = -7;
-        int maxY = 6 ;
         //只更新要更新的floorSmell
-        for (int y = minY + (maxFloorLength / 2); y < maxY + (maxFloorLength / 2); y++) {
-            for (int x = minX + (maxFloorLength / 2); x < maxX + (maxFloorLength / 2); x++) {
+        for (int y = 0; y < maxFloorLength; y++) {
+            for (int x = 0; x < maxFloorLength ; x++) {
                 floorSmell curFloorSmell = floorDatas[ x, y ].floorSmell;
                 if (curFloorSmell.attackSmell > 0) {
                     curFloorSmell.attackSmell -= globalVarManager.deltaTime;

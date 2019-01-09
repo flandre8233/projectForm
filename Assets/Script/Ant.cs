@@ -118,7 +118,11 @@ public class Ant : MonoBehaviour {
                     antMiningActivity = AntMiningActivityState.returnToBase;
                     inAttackRange = false;
                     targetMine = null;
+
                     setDestinationToHeart();
+
+                    //lasttimeConcentration = 60;
+                    //smellSystem();
                     startLerpToDestination();
                 } else {
                     //根本沒有礦物
@@ -329,7 +333,7 @@ public class Ant : MonoBehaviour {
         //面向角度
     }
 
-    float lasttimeConcentration;
+    float lasttimeConcentration = 60;
 
     //到達下一格時
     void onArrivalsDestination() {
@@ -340,6 +344,13 @@ public class Ant : MonoBehaviour {
         updateWorkJob();
 
         leaveSomeSmell();
+
+        /*
+        if (antMiningActivity == AntMiningActivityState.returnToBase) {
+            smellSystem();
+        }
+        */
+
         //smellSystem();
 
         if (pathfindedInt != Destination) {
@@ -355,9 +366,9 @@ public class Ant : MonoBehaviour {
     void leaveSomeSmell() {
         floorData curFloorData = gameModel.instance.getFloorDatas(InMapV3Pos);
         if (!isFriendly) {
-            curFloorData.floorSmell.enemySmell = (gameModel.instance.getMaxFloorLength() / 2);
+            curFloorData.floorSmell.enemySmell = 60;
         } else {
-            curFloorData.floorSmell.friendlySmell = (gameModel.instance.getMaxFloorLength() / 2);
+            curFloorData.floorSmell.friendlySmell = 60;
         }
     }
 
@@ -367,23 +378,33 @@ public class Ant : MonoBehaviour {
         if (!isFriendly) {
         } else {
             if (!EnemyAnt) {
-                //如果發現有敵人氣息就展開調查
-                if (curFloorData.floorSmell.enemySmell > 0) {
+                //如果發現有敵人氣息就展開調查 <- old
+                if (curFloorData.floorSmell.friendlySmell > 0) {
                     Vector2Int[] nexttoPos = {
                     new Vector2Int(InMapV3Pos.x + 1, InMapV3Pos.y),
                     new Vector2Int(InMapV3Pos.x - 1, InMapV3Pos.y),
                     new Vector2Int(InMapV3Pos.x, InMapV3Pos.y + 1),
                     new Vector2Int(InMapV3Pos.x, InMapV3Pos.y - 1),
                 };
+
                     bool keepFindSmell = false;
                     for (int i = 0; i < nexttoPos.Length; i++) {
-                        if (gameModel.instance.getFloorDatas(nexttoPos[ i ]).floorSmell.enemySmell > lasttimeConcentration) {
-                            //把最終目的地改成氣息所在地
-                            lasttimeConcentration = gameModel.instance.getFloorDatas(InMapV3Pos).floorSmell.enemySmell;
+                        float smell = gameModel.instance.getFloorDatas(nexttoPos[ i ]).floorSmell.friendlySmell;
+                        if (smell > 0 && (smell < lasttimeConcentration || smell-lasttimeConcentration > 1)) {
+                            //把最終目的地改成氣息所在地 <- old
+                            
+                            lasttimeConcentration = smell;
+                            //lasttimeConcentration = gameModel.instance.getFloorDatas(InMapV3Pos).floorSmell.friendlySmell;
                             gameObject.GetComponent<SpriteRenderer>().color = new Color(0.5f, 1f, 0.5f);
                             keepFindSmell = true;
 
-                            Destination = new Vector2Int(nexttoPos[ i ].x - (gameModel.instance.getMaxFloorLength() / 2), nexttoPos[ i ].y - (gameModel.instance.getMaxFloorLength() / 2));
+                            Destination = new Vector2Int(nexttoPos[ i ].x, nexttoPos[ i ].y);
+
+                            print(smell);
+                            print(Destination);
+
+
+                            //Destination = new Vector2Int(nexttoPos[ i ].x - (gameModel.instance.getMaxFloorLength() / 2), nexttoPos[ i ].y - (gameModel.instance.getMaxFloorLength() / 2));
 
                         }
                     }

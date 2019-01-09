@@ -71,25 +71,25 @@ public class gameController : SingletonMonoBehavior<gameController> {
 
     void keyboardSpawnAnt() {
         if (Input.GetKeyDown(KeyCode.Z)) {
-            gameModel.instance.antList.Add(Instantiate(antPrefabs, new Vector3(12, 0, 0), Quaternion.identity).GetComponent<Ant>());
+            gameModel.instance.antList.Add(Instantiate(antPrefabs, new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>());
             gameModel.instance.delayerValUpdate();
         }
         if (Input.GetKeyDown(KeyCode.X)) {
             for (int i = 0; i < 10; i++) {
-                gameModel.instance.antList.Add(Instantiate(antPrefabs, new Vector3(12, 0, 0), Quaternion.identity).GetComponent<Ant>());
+                gameModel.instance.antList.Add(Instantiate(antPrefabs, new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>());
             }
             gameModel.instance.delayerValUpdate();
         }
         if (Input.GetKeyDown(KeyCode.C)) {
             for (int i = 0; i < 100; i++) {
-                gameModel.instance.antList.Add(Instantiate(antPrefabs, new Vector3(12, 0, 0), Quaternion.identity).GetComponent<Ant>());
+                gameModel.instance.antList.Add(Instantiate(antPrefabs, new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>());
             }
             gameModel.instance.delayerValUpdate();
 
         }
         if (Input.GetKeyDown(KeyCode.V)) {
             for (int i = 0; i < 1000; i++) {
-                gameModel.instance.antList.Add(Instantiate(antPrefabs, new Vector3(1, 0, 0), Quaternion.identity).GetComponent<Ant>());
+                gameModel.instance.antList.Add(Instantiate(antPrefabs, new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>());
             }
             gameModel.instance.delayerValUpdate();
         }
