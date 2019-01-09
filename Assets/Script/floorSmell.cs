@@ -39,10 +39,17 @@ public class floorData {
 
 }
 
+
+
+public struct Smell {
+    public float smell;
+    public Direction from;
+}
+
 public struct floorSmell {
-    public float mineSmell;
-    public float attackSmell;
-    public float enemySmell;
-    public float friendlySmell;
-    public float alertSmell;
+    public Smell mineSmell;
+    public Smell attackSmell;
+    public Smell enemySmell;
+    public Smell friendlySmell;
+    public Smell alertSmell;
 }

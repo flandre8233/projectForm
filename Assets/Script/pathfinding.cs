@@ -2,13 +2,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum Direction {
+    Up,
+    Down,
+    Left,
+    Right
+}
+
 public static class pathfinding {
-    public enum Direction {
-        Up,
-        Down,
-        Left,
-        Right
-    }
+
 
     enum pathfindingMethod {
         Diffusion,
