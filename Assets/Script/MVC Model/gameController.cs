@@ -32,6 +32,12 @@ public class gameController : SingletonMonoBehavior<gameController> {
             }
         }
 
+        GameObject[] MineGameObject = GameObject.FindGameObjectsWithTag("Mine");
+        foreach (var item in MineGameObject) {
+            mine itemMine = item.GetComponent<mine>();
+            itemMine.init();
+        }
+
         for (int i = 0; i < 0; i++) {
             gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs, new Vector3(18, 0, 0), Quaternion.identity).GetComponent<Ant>());
         }
@@ -52,6 +58,15 @@ public class gameController : SingletonMonoBehavior<gameController> {
         keyboardSpawnEnemyAnt();
         keyboardDestroyAllEnemyAnt();
         keyboardDestroyAllAnt();
+
+        if (Input.GetKeyDown(KeyCode.Q) ) {
+            foreach (var item in gameModel.instance.antList) {
+                item.cutOffCurMovement();
+                item.setDestinationToHeart();
+                item.startLerpToDestination();
+            }
+        }
+
     }
 
     void keyboardSpawnAnt() {
@@ -134,7 +149,7 @@ public class gameController : SingletonMonoBehavior<gameController> {
 
 
     void ToUpdate() {
-        autoSpawn();
+        //autoSpawn();
         keyboardTest();
         
     }

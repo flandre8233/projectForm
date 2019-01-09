@@ -21,10 +21,25 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
 
     public int delayer;
 
+    int maxFloorLength = 300;
+
+
+    public int mapRadius = 40;
+    public Vector2Int dungeonHeartV2Point = new Vector2Int(10, -1);
+
+    public int resource;
+
+    //test用
+    public Vector2Int minePoint;
+
+    public int getMaxFloorLength() {
+        return maxFloorLength;
+    }
+
     public void init () {
-        floorDatas = new floorData[ 100,100];
-        for (int y = 0; y < 100; y++) {
-            for (int x = 0; x < 100; x++) {
+        floorDatas = new floorData[ maxFloorLength, maxFloorLength ];
+        for (int y = 0; y < maxFloorLength; y++) {
+            for (int x = 0; x < maxFloorLength; x++) {
                 floorDatas[ x, y ] = new floorData();
             }
         }
@@ -38,11 +53,17 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
     }
 
     private void OnDestroy() {
+   
         globalUpdateManager.instance.UnregisterUpdateDg(ToUpdate);
     }
 
     public floorData getFloorDatas(Vector2Int pos) {
-        return floorDatas[ pos.x + 50, pos.y + 50 ];
+        try {
+            return floorDatas[ pos.x + (maxFloorLength/2), pos.y + (maxFloorLength / 2) ];
+        } catch (System.IndexOutOfRangeException) {
+            Debug.LogWarning(pos );
+        }
+        return floorDatas[ pos.x + (maxFloorLength / 2), pos.y + (maxFloorLength / 2) ];
     }
 
     public void smellDissipate() {
@@ -51,8 +72,8 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
         int minY = -7;
         int maxY = 6 ;
         //只更新要更新的floorSmell
-        for (int y = minY + 50; y < maxY + 50; y++) {
-            for (int x = minX + 50; x < maxX + 50; x++) {
+        for (int y = minY + (maxFloorLength / 2); y < maxY + (maxFloorLength / 2); y++) {
+            for (int x = minX + (maxFloorLength / 2); x < maxX + (maxFloorLength / 2); x++) {
                 floorSmell curFloorSmell = floorDatas[ x, y ].floorSmell;
                 if (curFloorSmell.attackSmell > 0) {
                     curFloorSmell.attackSmell -= globalVarManager.deltaTime;
@@ -90,7 +111,7 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
     public Vector2Int genRandomMapV3() {
         Vector2Int res = new Vector2Int();
         res.x = Random.Range(1,21);
-        res.y = Random.Range(-7,7);
+        res.y = Random.Range(-9,7);
         return res;
     }
     
@@ -117,7 +138,6 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
         floorData floorData = getFloorDatas(mapV3);
         List<Ant> ants = floorData.enemyAnts;
         return pickUpAntFromArray(ants);
-
     }
 
     public Ant getSingleAnt_EnemyInRange(Vector2Int pos, float range) {
@@ -140,6 +160,20 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
             }
         }
         return pickUpAntFromArray(ants);
+    }
+
+    public mine getSingleMineInRange(Vector2Int pos,float range) {
+        int R = (int)range;
+        for (int x = -R; x < R; x++) {
+            for (int y = -R; y < R; y++) {
+                mine item = getFloorDatas(new Vector2Int(pos.x + x, pos.y + y)).mine;
+                if (item && item.resource >= 5) {
+                    return item;
+                }
+            }
+        }
+        //cant find
+        return null;
     }
 
     public bool Vector2IntEquality(Vector2Int v2_1,Vector2Int v2_2) {

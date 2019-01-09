@@ -6,6 +6,7 @@ public class floorData {
     public floorSmell floorSmell;
     public List<Ant> ants;
     public List<Ant> enemyAnts;
+    public mine mine;
 
     public floorData() {
         ants = new List<Ant>();
@@ -27,6 +28,15 @@ public class floorData {
             enemyAnts.Remove(ant);
         }
     }
+
+    public void RegisterMineData(mine Mine) {
+        mine = Mine;
+    }
+
+    public void UnregisterMineData() {
+        mine = null;
+    }
+
 }
 
 public struct floorSmell {
