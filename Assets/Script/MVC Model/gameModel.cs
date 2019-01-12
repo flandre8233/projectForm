@@ -73,17 +73,17 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
         for (int y = 0; y < maxFloorLength; y++) {
             for (int x = 0; x < maxFloorLength ; x++) {
                 floorSmell curFloorSmell = floorDatas[ x, y ].floorSmell;
-                if (curFloorSmell.attackSmell > 0) {
-                    curFloorSmell.attackSmell -= globalVarManager.deltaTime;
+                if (curFloorSmell.attackSmell.smell > 0) {
+                    curFloorSmell.attackSmell.smell -= globalVarManager.deltaTime;
                 }
-                if (curFloorSmell.enemySmell > 0) {
-                    curFloorSmell.enemySmell -= globalVarManager.deltaTime;
+                if (curFloorSmell.enemySmell.smell > 0) {
+                    curFloorSmell.enemySmell.smell -= globalVarManager.deltaTime;
                 }
-                if (curFloorSmell.friendlySmell > 0) {
-                    curFloorSmell.friendlySmell -= globalVarManager.deltaTime;
+                if (curFloorSmell.friendlySmell.smell > 0) {
+                    curFloorSmell.friendlySmell.smell -= globalVarManager.deltaTime;
                 }
-                if (curFloorSmell.mineSmell > 0) {
-                    curFloorSmell.mineSmell -= globalVarManager.deltaTime;
+                if (curFloorSmell.mineSmell.smell > 0) {
+                    curFloorSmell.mineSmell.smell -= globalVarManager.deltaTime;
                 }
                 floorDatas[ x, y ].floorSmell = curFloorSmell;
             }

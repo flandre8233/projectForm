@@ -38,6 +38,10 @@ public class Ant : MonoBehaviour {
 
     public Vector2Int InMapV3Pos;
 
+    public List<Vector2Int> pathRecord;
+    [SerializeField]
+    int pathCounter;
+
     public Vector2Int pathfindedInt;
     [SerializeField]
     Vector3 pathfindedV3;
@@ -106,53 +110,7 @@ public class Ant : MonoBehaviour {
                 }
             }
         }
-
-        if (antMiningActivity == AntMiningActivityState.goingToMine) {
-            if (inAttackRange) {
-                //採集
-                if (targetMine.resource >= 5) {
-                    inventory += 5;
-                    targetMine.resource -= inventory;
-
-
-                    antMiningActivity = AntMiningActivityState.returnToBase;
-                    inAttackRange = false;
-                    targetMine = null;
-
-                    setDestinationToHeart();
-
-                    //lasttimeConcentration = 60;
-                    //smellSystem();
-                    startLerpToDestination();
-                } else {
-                    //根本沒有礦物
-                    inAttackRange = false;
-                    targetMine = null;
-                    antMiningActivity = AntMiningActivityState.none;
-                    antActivity = AntActivityState.WalkingAround;
-                    resetActivityToNormal();
-                }
-         
-
-            }
-        }
-
-        //暫時
-        if (antMiningActivity == AntMiningActivityState.returnToBase) {
-            inAttackRange = gameModel.instance.Vector2IntEquality(gameModel.instance.dungeonHeartV2Point, InMapV3Pos);
-            if (inAttackRange) {
-                gameModel.instance.resource += inventory;
-                inventory = 0;
-
-                inAttackRange = false;
-                antMiningActivity = AntMiningActivityState.none;
-                antActivity = AntActivityState.WalkingAround;
-                resetActivityToNormal();
-
-            }
-        }
-
-
+        
         //如自己以死掉
         if (alreadyDead) {
             //destroy self
@@ -337,6 +295,14 @@ public class Ant : MonoBehaviour {
 
     //到達下一格時
     void onArrivalsDestination() {
+        if (antMiningActivity == AntMiningActivityState.returnToBase) {
+            returnBaseByRecordPath();
+        } else {
+            //記錄舊路徑
+            pathRecord.Add(InMapV3Pos);
+        }
+
+
         //更新單位資料
         updateObjectMapInformation();
 
@@ -345,13 +311,53 @@ public class Ant : MonoBehaviour {
 
         leaveSomeSmell();
 
-        /*
-        if (antMiningActivity == AntMiningActivityState.returnToBase) {
-            smellSystem();
-        }
-        */
+        if (antMiningActivity == AntMiningActivityState.goingToMine) {
+            if (inAttackRange) {
+                //採集
+                if (targetMine.resource >= 5) {
+                    inventory += 5;
+                    targetMine.resource -= inventory;
 
-        //smellSystem();
+
+                    antMiningActivity = AntMiningActivityState.returnToBase;
+                    inAttackRange = false;
+                    targetMine = null;
+
+                    //setDestinationToHeart();
+
+                    //先設回記憶路徑最末端
+                    pathCounter = pathRecord.Count - 1;
+                    returnBaseByRecordPath();
+
+                    startLerpToDestination();
+                } else {
+                    //根本沒有礦物
+                    inAttackRange = false;
+                    targetMine = null;
+                    antMiningActivity = AntMiningActivityState.none;
+                    antActivity = AntActivityState.WalkingAround;
+                    resetActivityToNormal();
+                }
+            }
+        }
+
+        //暫時
+        if (antMiningActivity == AntMiningActivityState.returnToBase) {
+            inAttackRange = gameModel.instance.Vector2IntEquality(gameModel.instance.dungeonHeartV2Point, InMapV3Pos);
+            if (inAttackRange) {
+                gameModel.instance.resource += inventory;
+                inventory = 0;
+
+                //清空記憶
+                pathRecord.Clear();
+
+                inAttackRange = false;
+                antMiningActivity = AntMiningActivityState.none;
+                antActivity = AntActivityState.WalkingAround;
+                resetActivityToNormal();
+
+            }
+        }
 
         if (pathfindedInt != Destination) {
             //如果還有目的地就繼續走動
@@ -366,55 +372,18 @@ public class Ant : MonoBehaviour {
     void leaveSomeSmell() {
         floorData curFloorData = gameModel.instance.getFloorDatas(InMapV3Pos);
         if (!isFriendly) {
-            curFloorData.floorSmell.enemySmell = 60;
+            curFloorData.floorSmell.enemySmell.smell = 60;
         } else {
-            curFloorData.floorSmell.friendlySmell = 60;
+            curFloorData.floorSmell.friendlySmell.smell = 60;
         }
     }
 
-    void smellSystem() {
-        //氣味系統 試作
-        floorData curFloorData = gameModel.instance.getFloorDatas(InMapV3Pos);
-        if (!isFriendly) {
-        } else {
-            if (!EnemyAnt) {
-                //如果發現有敵人氣息就展開調查 <- old
-                if (curFloorData.floorSmell.friendlySmell > 0) {
-                    Vector2Int[] nexttoPos = {
-                    new Vector2Int(InMapV3Pos.x + 1, InMapV3Pos.y),
-                    new Vector2Int(InMapV3Pos.x - 1, InMapV3Pos.y),
-                    new Vector2Int(InMapV3Pos.x, InMapV3Pos.y + 1),
-                    new Vector2Int(InMapV3Pos.x, InMapV3Pos.y - 1),
-                };
-
-                    bool keepFindSmell = false;
-                    for (int i = 0; i < nexttoPos.Length; i++) {
-                        float smell = gameModel.instance.getFloorDatas(nexttoPos[ i ]).floorSmell.friendlySmell;
-                        if (smell > 0 && (smell < lasttimeConcentration || smell-lasttimeConcentration > 1)) {
-                            //把最終目的地改成氣息所在地 <- old
-                            
-                            lasttimeConcentration = smell;
-                            //lasttimeConcentration = gameModel.instance.getFloorDatas(InMapV3Pos).floorSmell.friendlySmell;
-                            gameObject.GetComponent<SpriteRenderer>().color = new Color(0.5f, 1f, 0.5f);
-                            keepFindSmell = true;
-
-                            Destination = new Vector2Int(nexttoPos[ i ].x, nexttoPos[ i ].y);
-
-                            print(smell);
-                            print(Destination);
-
-
-                            //Destination = new Vector2Int(nexttoPos[ i ].x - (gameModel.instance.getMaxFloorLength() / 2), nexttoPos[ i ].y - (gameModel.instance.getMaxFloorLength() / 2));
-
-                        }
-                    }
-                    if (!keepFindSmell) {
-                        //lost target
-                        gameObject.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
-                    }
-                }
-            }
+    void returnBaseByRecordPath() {
+        if (pathCounter <= 0) {
+            return;
         }
+        pathCounter--;
+        Destination = pathRecord[ pathCounter ];
     }
 
     //更新坐標
