@@ -3,6 +3,43 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
+[System.Serializable]
+public class WalkingPath {
+    public List<Vector2Int> path;
+    public int serialNumber;
+
+    public WalkingPath(List<Vector2Int> ListV2) {
+        deepCopyWriteIn(ListV2);
+    }
+    public WalkingPath(WalkingPath WP) {
+        deepCopyWriteIn(WP.path);
+        serialNumber = WP.serialNumber;
+    }
+    public WalkingPath() {
+        path = new List<Vector2Int>();
+        serialNumber = 0;
+    }
+
+    public List<Vector2Int> deepCopyOutputV2() {
+        List<Vector2Int> outputData = new List<Vector2Int>();
+        outputData.AddRange(path);
+        return outputData;
+    }
+    public WalkingPath deepCopyOutputWP() {
+        List<Vector2Int> newV2List = new List<Vector2Int>();
+        newV2List.AddRange(path);
+        WalkingPath outputData = new WalkingPath(newV2List);
+        outputData.serialNumber = serialNumber;
+        return outputData;
+    }
+
+public void deepCopyWriteIn(List<Vector2Int> ListV2) {
+        path = new List<Vector2Int>();
+        path.AddRange(ListV2);
+    }
+
+}
+
 public class gameModel : SingletonMonoBehavior<gameModel> {
     public List<Ant> antList;
     public List<Ant> ant_enemyList;
@@ -23,9 +60,7 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
 
     int maxFloorLength = 300;
 
-
     public int mapRadius = 40;
-    public Vector2Int dungeonHeartV2Point;
 
     //public Vector2Int dungeonHeartV2Point = new Vector2Int(10, -1);
 
@@ -33,6 +68,12 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
 
     //test用
     public Vector2Int minePoint;
+
+    int UIDApplication;
+
+    public int UIDRequest() {
+        return UIDApplication++;
+    }
 
     public int getMaxFloorLength() {
         return maxFloorLength;
@@ -55,7 +96,6 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
     }
 
     private void OnDestroy() {
-   
         globalUpdateManager.instance.UnregisterUpdateDg(ToUpdate);
     }
 
@@ -165,7 +205,7 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
         for (int x = -R; x < R; x++) {
             for (int y = -R; y < R; y++) {
                 mine item = getFloorDatas(new Vector2Int(pos.x + x, pos.y + y)).mine;
-                if (item && item.resource >= 5) {
+                if (item) {
                     return item;
                 }
             }
@@ -197,6 +237,13 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
             result.Add(item);
         }
         return result;
+    }
+
+    public bool checkIsThereAPointNearby(Vector2Int orlPoint,Vector2Int targetPoint,int radius) {
+        if (orlPoint.x + radius < targetPoint.x || orlPoint.x - radius >  targetPoint.x || orlPoint.y + radius < targetPoint.y || orlPoint.y - radius > targetPoint.y) {
+            return false;
+        }
+        return true;
     }
 
     public bool checkNextToIsWall(Vector2Int mapV3) {

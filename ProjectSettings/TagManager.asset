@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Ant
   - Mine
+  - MotherBase
   layers:
   - Default
   - TransparentFX

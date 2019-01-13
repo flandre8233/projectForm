@@ -10,8 +10,11 @@ public class mine : building {
     public override void init () {
         base.init();
         gameModel.instance.getFloorDatas(InMapV3Pos).RegisterMineData(this);
-	}
+
+    }
 	
+
+
 	// Update is called once per frame
 	void Update () {
 		

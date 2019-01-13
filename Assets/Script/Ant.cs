@@ -4,27 +4,27 @@ using UnityEngine;
 
 
 public class Ant : MonoBehaviour {
-    enum AntActivityState {
+    public enum AntActivityState {
         WalkingAround,
         ChasingEnemy,
         miningResource
     }
 
-    enum AntMiningActivityState {
+    public enum AntMiningActivityState {
         none,
         returnToBase,
-        goingToMine
+        goingToMine,
+        followTheMinePath
     }
 
-    [SerializeField]
-    AntActivityState antActivity;
-    [SerializeField]
-    AntMiningActivityState antMiningActivity;
+    public AntActivityState antActivity;
+    public AntMiningActivityState antMiningActivity;
 
     public int HP;
     public int Damage;
 
     public int inventory;
+    public bool isLastOne;
 
     int carryMax;
 
@@ -38,7 +38,7 @@ public class Ant : MonoBehaviour {
 
     public Vector2Int InMapV3Pos;
 
-    public List<Vector2Int> pathRecord;
+    public WalkingPath pathRecord;
     [SerializeField]
     int pathCounter;
 
@@ -185,13 +185,24 @@ public class Ant : MonoBehaviour {
 
 
         if (targetMine) {
-            inAttackRange = gameModel.instance.Vector2IntEquality(targetMine.InMapV3Pos, InMapV3Pos);
+            if (targetMine.resource >= 5) {
+                //需要為目前地板留多一個足跡
+                pathRecord.path.Add(InMapV3Pos);
 
-            antActivity = AntActivityState.miningResource;
-            antMiningActivity = AntMiningActivityState.goingToMine;
-            setDestinationToMine();
+                inAttackRange = gameModel.instance.Vector2IntEquality(targetMine.InMapV3Pos, InMapV3Pos);
 
-        }
+                antActivity = AntActivityState.miningResource;
+                antMiningActivity = AntMiningActivityState.goingToMine;
+                setDestinationToMine();
+                
+            } else {
+                //沒有礦了 
+                antActivity = AntActivityState.WalkingAround;
+                antMiningActivity = AntMiningActivityState.none;
+            }
+
+        } 
+   
     }
     void attackCD() {
         if (curCD > 0) {
@@ -295,11 +306,28 @@ public class Ant : MonoBehaviour {
 
     //到達下一格時
     void onArrivalsDestination() {
-        if (antMiningActivity == AntMiningActivityState.returnToBase) {
-            returnBaseByRecordPath();
-        } else {
-            //記錄舊路徑
-            pathRecord.Add(InMapV3Pos);
+
+        switch (antMiningActivity) {
+            case AntMiningActivityState.none:
+                //如果根本很接近基地，就直接清空數據，當成重新在基地出發
+                if (gameModel.instance.checkIsThereAPointNearby(InMapV3Pos, motherBase.instance.InMapV3Pos, 2)) {
+                    pathRecord = new WalkingPath();
+                    pathRecord.path.Add(motherBase.instance.InMapV3Pos);
+                }
+                //記錄舊路徑
+                pathRecord.path.Add(InMapV3Pos);
+                break;
+            case AntMiningActivityState.returnToBase:
+                returnBaseByRecordPath();
+                break;
+            case AntMiningActivityState.goingToMine:
+                
+                break;
+            case AntMiningActivityState.followTheMinePath:
+                goToMineByRecordPath();
+                break;
+            default:
+                break;
         }
 
 
@@ -317,6 +345,13 @@ public class Ant : MonoBehaviour {
                 if (targetMine.resource >= 5) {
                     inventory += 5;
                     targetMine.resource -= inventory;
+                    if (targetMine.resource <= 0) {
+                        isLastOne = true;
+                    }
+
+                    //先設回記憶路徑最末端
+                    pathCounter = pathRecord.path.Count - 1;
+                    returnBaseByRecordPath();
 
 
                     antMiningActivity = AntMiningActivityState.returnToBase;
@@ -325,10 +360,7 @@ public class Ant : MonoBehaviour {
 
                     //setDestinationToHeart();
 
-                    //先設回記憶路徑最末端
-                    pathCounter = pathRecord.Count - 1;
-                    returnBaseByRecordPath();
-
+              
                     startLerpToDestination();
                 } else {
                     //根本沒有礦物
@@ -343,13 +375,24 @@ public class Ant : MonoBehaviour {
 
         //暫時
         if (antMiningActivity == AntMiningActivityState.returnToBase) {
-            inAttackRange = gameModel.instance.Vector2IntEquality(gameModel.instance.dungeonHeartV2Point, InMapV3Pos);
+            inAttackRange = gameModel.instance.Vector2IntEquality(motherBase.instance.InMapV3Pos, InMapV3Pos);
             if (inAttackRange) {
                 gameModel.instance.resource += inventory;
                 inventory = 0;
 
+                if (isLastOne) {
+                    //當這蟻已知礦已用完，那他就告之motherBase已用完，然後等motherBase處理
+                    motherBase.instance.OnSomeMineIsEmpty(pathRecord.serialNumber);
+                    isLastOne = false;
+                } else {
+                    //礦未用完就跟motherBase新路徑內容
+                    print(pathRecord.path.Count);
+                    motherBase.instance.addNewMinePath(pathRecord.path);
+                }
+
+             
                 //清空記憶
-                pathRecord.Clear();
+                pathRecord = new WalkingPath();
 
                 inAttackRange = false;
                 antMiningActivity = AntMiningActivityState.none;
@@ -383,7 +426,15 @@ public class Ant : MonoBehaviour {
             return;
         }
         pathCounter--;
-        Destination = pathRecord[ pathCounter ];
+        Destination = pathRecord.path[ pathCounter ];
+    }
+
+    void goToMineByRecordPath() {
+        if (pathCounter >= pathRecord.path.Count-1) {
+            return;
+        }
+        pathCounter++;
+        Destination = pathRecord.path[ pathCounter ];
     }
 
     //更新坐標
@@ -418,7 +469,7 @@ public class Ant : MonoBehaviour {
         //Vector2Int randomMapv3 = gameModel.instance.genRandomMapV3();
         float angle = Random.Range(0, 360);
         int movableArea = gameModel.instance.mapRadius;
-        Vector2Int randomMapv3 = polarCoordinates(gameModel.instance.dungeonHeartV2Point, angle, (int)(getLengthForDeg(angle) * Random.Range(0, movableArea)));
+        Vector2Int randomMapv3 = polarCoordinates(motherBase.instance.InMapV3Pos, angle, (int)(getLengthForDeg(angle) * Random.Range(0, movableArea)));
         //Vector2Int randomMapv3 = polarCoordinates(gameModel.instance.dungeonHeartV2Point, angle, (int)(getLengthForDeg(angle) * proportionRandom(movableArea, 5)) );
         Destination = randomMapv3;
         //Vector2Int randomMapv3 = polarCoordinates(new Vector2Int((1+21)/2,(-9+7)/2 ) ,Random.Range(0,360), proportionRandom(36,6) );
@@ -434,7 +485,7 @@ public class Ant : MonoBehaviour {
     }
 
     public void setDestinationToHeart() {
-        Destination = gameModel.instance.dungeonHeartV2Point;
+        Destination = motherBase.instance.InMapV3Pos;
     }
 
     int proportionRandom(int maxVal, int equalParts) {
