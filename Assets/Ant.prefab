@@ -125,7 +125,7 @@ Transform:
   m_GameObject: {fileID: 1198665427115890}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 9.506496, y: 2.4811475, z: 0.9300499}
-  m_LocalScale: {x: 0.2, y: 0.2, z: 0.2}
+  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_Children:
   - {fileID: 4902251247511564}
   m_Father: {fileID: 0}
@@ -188,17 +188,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55a71d39de72b9c42ad0e730e6bdf2cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  antActivity: 0
+  antMiningActivity: 0
   HP: 5
   Damage: 1
+  avgWalkTimeBetweenGridAndGrid: 1
+  walkTimeRandomGap: 0.4
   attackCooldown: 2
+  curCD: 0
+  killCount: 0
   isFriendly: 1
   alreadyDead: 0
   Destination: {x: 0, y: 0}
   InMapV3Pos: {x: 0, y: 0}
+  pathRecord:
+    path: []
+    serialNumber: 0
+  pathCounter: 0
   pathfindedInt: {x: 0, y: 0}
   pathfindedV3: {x: 0, y: 0, z: 0}
   EnemyAnt: {fileID: 0}
   AntAni: {fileID: 95520290830907412}
+  inAttackRange: 0
 --- !u!137 &137316377971208090
 SkinnedMeshRenderer:
   m_ObjectHideFlags: 1

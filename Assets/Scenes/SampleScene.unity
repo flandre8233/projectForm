@@ -233,6 +233,7 @@ GameObject:
   - component: {fileID: 283149864}
   - component: {fileID: 283149863}
   - component: {fileID: 283149862}
+  - component: {fileID: 283149866}
   m_Layer: 0
   m_Name: MVC
   m_TagString: Untagged
@@ -253,10 +254,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameCam: {fileID: 534669904}
   antPrefabs: {fileID: 1198665427115890, guid: 6fd9e75a86d2003458b600ab064b69f3, type: 2}
-  ant_enemyPrefabs: {fileID: 1198665427115890, guid: eb69d748d5bff1742a9e5269df3bb017,
+  antMinerPrefabs: {fileID: 1198665427115890, guid: 79c78e79e7b6f4b4f9b958f84f0f6d7a,
+    type: 2}
+  ant_enemyPrefabs: {fileID: 1198665427115890, guid: 049796168ac7e4f48a9138cd051ba757,
     type: 2}
   ant_enemyPrefabs_big: {fileID: 1198665427115890, guid: 049796168ac7e4f48a9138cd051ba757,
     type: 2}
+  MineBuilding: {fileID: 1073678780370622, guid: 3b054238a920d4347ac3711708fb7137,
+    type: 2}
+  antTypeCost: 020000000400000000000000
 --- !u!114 &283149863
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -281,12 +287,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   antList: []
   ant_enemyList: []
+  mineList: []
   tilemap: {fileID: 1239847365}
   tilemapWall: {fileID: 748386591}
   gridLayout: {fileID: 17198994}
   delayer: 0
-  mapRadius: 50
-  resource: 0
+  mapRadius: 25
+  unitLimit: 100
+  resource: 1000
   minePoint: {x: 0, y: 0}
 --- !u!4 &283149865
 Transform:
@@ -301,6 +309,49 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &283149866
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 283149861}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51aafc8563de0dc4a89695cad286fc44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  OnNoResourceAble:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 283149866}
+        m_MethodName: logText
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: "\u9700\u8981\u66F4\u591A\u8CC7\u6E90\u3002"
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine.CoreModule, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null
+  OnLimitFull:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 283149866}
+        m_MethodName: logText
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: "\u6C92\u6709\u66F4\u591A\u55AE\u4F4D\u4E0A\u9650\u3002"
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine.CoreModule, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null
 --- !u!1 &291238585
 GameObject:
   m_ObjectHideFlags: 0
@@ -329,7 +380,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   InMapV3Pos: {x: 0, y: 0}
-  walkToMinePaths: []
+  UID: 0
 --- !u!4 &291238587
 Transform:
   m_ObjectHideFlags: 0
@@ -342,7 +393,7 @@ Transform:
   m_Children:
   - {fileID: 1326054378}
   m_Father: {fileID: 0}
-  m_RootOrder: 8
+  m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &490825867
 GameObject:
@@ -429,6 +480,7 @@ GameObject:
   - component: {fileID: 534669905}
   - component: {fileID: 534669904}
   - component: {fileID: 534669903}
+  - component: {fileID: 534669906}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: Untagged
@@ -467,7 +519,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 7.9
+  orthographic size: 5
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -496,6 +548,17 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &534669906
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 534669902}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 189f9fdf73240d54bbf7ecdf1ae37189, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &688633069
 GameObject:
   m_ObjectHideFlags: 0
@@ -1423,8 +1486,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ad96d00eb055c240939ea5e52fc46cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  InMapV3Pos: {x: 36, y: 15}
-  resource: 200
+  InMapV3Pos: {x: 5, y: 5}
+  UID: 0
+  resource: 50
 --- !u!4 &776679487
 Transform:
   m_ObjectHideFlags: 0
@@ -1437,7 +1501,7 @@ Transform:
   m_Children:
   - {fileID: 1111254700}
   m_Father: {fileID: 0}
-  m_RootOrder: 7
+  m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1004083151
 GameObject:

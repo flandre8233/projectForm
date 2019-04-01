@@ -5,12 +5,33 @@ using UnityEngine;
 public class floorData {
     public floorSmell floorSmell;
     public List<Ant> ants;
+    public List<Ant> ants_RandWalk;
+    public List<Ant> ants_FollowMinePath;
+
     public List<Ant> enemyAnts;
     public mine mine;
 
     public floorData() {
         ants = new List<Ant>();
         enemyAnts = new List<Ant>();
+        ants_RandWalk = new List<Ant>();
+        ants_FollowMinePath = new List<Ant>();
+    }
+
+    public void RegisterRandWalkAntData(Ant ant) {
+        ants_RandWalk.Add(ant);
+    }
+
+    public void UnregisterRandWalkAntData(Ant ant) {
+        ants_RandWalk.Remove(ant);
+    }
+
+    public void RegisterFollowMinePathAntData(Ant ant) {
+        ants_FollowMinePath.Add(ant);
+    }
+
+    public void UnregisterFollowMinePathAntData(Ant ant) {
+        ants_FollowMinePath.Remove(ant);
     }
 
     public void RegisterAntData(Ant ant,bool isFriendly) {

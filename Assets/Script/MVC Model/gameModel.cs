@@ -44,6 +44,8 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
     public List<Ant> antList;
     public List<Ant> ant_enemyList;
 
+    public List<mine> mineList;
+
     [SerializeField]
     Tilemap tilemap;
     [SerializeField]
@@ -60,7 +62,14 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
 
     int maxFloorLength = 300;
 
-    public int mapRadius = 40;
+    public int mapRadius;
+    public int mapBuildRadius {
+        get {
+            return (int)((mapRadius) * 0.2f);
+        }
+    }
+
+    public int unitLimit;
 
     //public Vector2Int dungeonHeartV2Point = new Vector2Int(10, -1);
 
@@ -129,6 +138,15 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
             }
         }
       
+    }
+
+    public bool tryDoSubtractBy(ref int orlVal , int SubtractVal) {
+        if (orlVal - SubtractVal < 0 ) {
+            operateFailEvent.instance.tryDoInvoke(operateFailEvent.instance.OnNoResourceAble);
+            return false;
+        }
+        orlVal -= SubtractVal;
+        return true;
     }
 
     public Vector3 mapV3ToWorldPos(Vector2Int pos) {
@@ -202,14 +220,16 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
 
     public mine getSingleMineInRange(Vector2Int pos,float range) {
         int R = (int)range;
-        for (int x = -R; x < R; x++) {
-            for (int y = -R; y < R; y++) {
-                mine item = getFloorDatas(new Vector2Int(pos.x + x, pos.y + y)).mine;
-                if (item) {
-                    return item;
-                }
+        for (int i = 0; i < mineList.Count; i++) {
+            mine item = mineList[ i ];
+            Vector2Int itemV2Int = item.InMapV3Pos;
+            if (pos.x + R > itemV2Int.x && pos.x - R < itemV2Int.x &&
+                pos.y + R > itemV2Int.y && pos.y - R < itemV2Int.y
+                ) {
+                return item;
             }
         }
+
         //cant find
         return null;
     }
@@ -274,10 +294,55 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
         return false;
     }
 
+    public bool successRateCalculation(float successRate) {
+        return Random.Range(0, 100) < successRate ? true : false;
+    }
+
+    public bool checkUnitLimit(int newUnit) {
+       if( antList.Count + newUnit <= unitLimit ) {
+            return true;
+        }
+        operateFailEvent.instance.tryDoInvoke(operateFailEvent.instance.OnLimitFull);
+        return false;
+    }
+
     public void delayerValUpdate() {
-        int numberOfAnt = gameModel.instance.antList.Count + gameModel.instance.ant_enemyList.Count;
+        int numberOfAnt = antList.Count + ant_enemyList.Count;
 
         delayer = numberOfAnt / 300;
+    }
+
+    public Vector2Int getSingleLineRandom(int singleLineArea) {
+        if (Random.Range(0,1) <= 0) {
+            singleLineArea *= -1;
+        } 
+        float randomAngle = Random.Range(0, 360);
+        Vector2Int randomMapv3 = polarCoordinates(motherBase.instance.InMapV3Pos, randomAngle, (int)(getLengthForDeg(randomAngle) * singleLineArea));
+        return randomMapv3;
+    }
+
+    public Vector2Int getRandomPoint() {
+        return getSingleLineRandom(Random.Range(0, mapRadius)); ;
+    }
+
+    float getLengthForDeg(float angle) {
+        angle = ((angle + 45) % 90 - 45) / 180 * Mathf.PI;
+        return 1 / Mathf.Cos(angle);
+    }
+
+    public Vector2Int polarCoordinates(Vector2Int orl_point, float angle, int dist) {
+        float x = dist * Mathf.Cos(angle * Mathf.Deg2Rad);
+        float y = dist * Mathf.Sin(angle * Mathf.Deg2Rad);
+        Vector2 newPosition = orl_point;
+        newPosition.x += x;
+        newPosition.y += y;
+        return Vector2Int.CeilToInt(newPosition);
+    }
+    public Vector2Int polarCoordinatesButSquare(Vector2Int orl_point, float angle, int dist) {
+        float radius = dist * Mathf.Cos(Mathf.PI / 4);
+        float x = orl_point.x + radius * Mathf.Cos(angle);
+        float y = orl_point.y + radius * Mathf.Sin(angle);
+        return Vector2Int.CeilToInt(new Vector2(x, y));
     }
 
 }

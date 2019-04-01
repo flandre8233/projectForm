@@ -8,7 +8,8 @@ public class building : MonoBehaviour {
     public int UID;
 
     // Use this for initialization
-    public virtual void init() {
+    public virtual void init(Vector2Int initObjectMapV2) {
+        InMapV3Pos = initObjectMapV2;
         alignmentToMap();
         UID = gameModel.instance.UIDRequest();
     }
@@ -19,12 +20,11 @@ public class building : MonoBehaviour {
 	}
 
     void alignmentToMap() {
-        print("do");
         transform.position = gameModel.instance.mapV3ToWorldPos(InMapV3Pos);
     }
 
     private void Start() {
-        init();
+        //init();
     }
 
 }

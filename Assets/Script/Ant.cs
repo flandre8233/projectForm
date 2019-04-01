@@ -1,8 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-
 public class Ant : MonoBehaviour {
     public enum AntActivityState {
         WalkingAround,
@@ -21,15 +19,35 @@ public class Ant : MonoBehaviour {
     public AntMiningActivityState antMiningActivity;
 
     public int HP;
+
     public int Damage;
 
-    public int inventory;
-    public bool isLastOne;
+    [SerializeField]
+    int cost;
+
+    public void addCost(int val) {
+        cost += val;
+    }
+
+    public float AutonomyLevel;
+    public bool resistOrder;
+    float resistOrderCoolDown;
+
+    [ SerializeField]
+    [Range(0, 2)]
+    float avgWalkTimeBetweenGridAndGrid;
+    [SerializeField]
+    [Range(0, 1)]
+    float walkTimeRandomGap;
 
     int carryMax;
 
     public float attackCooldown;
+    [SerializeField]
     float curCD;
+
+    [SerializeField]
+    int killCount;
 
     public bool isFriendly;
     public bool alreadyDead;
@@ -39,30 +57,38 @@ public class Ant : MonoBehaviour {
     public Vector2Int InMapV3Pos;
 
     public WalkingPath pathRecord;
-    [SerializeField]
-    int pathCounter;
+    public int pathCounter;
 
     public Vector2Int pathfindedInt;
     [SerializeField]
     Vector3 pathfindedV3;
 
-    vector3Lerp vector3Lerp = new vector3Lerp();
+    AntV3Lerp vector3Lerp = null;
     [SerializeField]
     Ant EnemyAnt;
-    [SerializeField]
-    mine targetMine;
+
 
     bool firstTimeFindEnemy;
 
     [SerializeField]
     Animator AntAni;
 
-    bool inAttackRange;
+    public bool inAttackRange;
+
+
 
     float runSpeed;
 
+    Transform _transform = null;
+
     private void Awake() {
         //對方可能會先過start就destroy掉這class
+        vector3Lerp = new AntV3Lerp(this);
+        _transform = transform;
+        AutonomyLevel = Random.Range(0,100);
+
+        //讓體形最大的單位站在最頭
+        GetComponent<SpriteRenderer>().sortingOrder = (int)(10 * ((_transform.localScale.x + _transform.localScale.y + _transform.localScale.z) / 3));
 
         if (gameModel.instance) {
             updateObjectMapInformation();
@@ -70,11 +96,11 @@ public class Ant : MonoBehaviour {
     }
 
     // Use this for initialization
-    void Start() {
+    public virtual void Start() {
         globalUpdateManager.instance.registerUpdateDg(ToUpdate);
         findNewPath();
         startLerpToDestination();
-        runSpeed = Random.Range(0.2f, 0.4f);
+        runSpeed = Random.Range(avgWalkTimeBetweenGridAndGrid - walkTimeRandomGap, avgWalkTimeBetweenGridAndGrid + walkTimeRandomGap);
     }
 
     private void OnDestroy() {
@@ -84,7 +110,26 @@ public class Ant : MonoBehaviour {
         } else {
             gameModel.instance.ant_enemyList.Remove(this);
         }
+
         gameModel.instance.getFloorDatas(InMapV3Pos).UnregisterAntData(this, isFriendly);
+        if (randWalkSmellRecord) {
+            gameModel.instance.getFloorDatas(InMapV3Pos).UnregisterRandWalkAntData(this);
+            randWalkSmellRecord = false;
+        }
+        if (FollowMinePathSmellRecord) {
+            gameModel.instance.getFloorDatas(InMapV3Pos).UnregisterFollowMinePathAntData(this);
+            FollowMinePathSmellRecord = false;
+        }
+
+    }
+
+    void OnDead() {
+        gameController.instance.spawnMineBuilding(InMapV3Pos, getRefundNum() );
+        Destroy(gameObject);
+    }
+
+    public virtual int getRefundNum() {
+        return cost/2;
     }
 
     // Update is called once per frame
@@ -96,6 +141,15 @@ public class Ant : MonoBehaviour {
         //AntAni.SetBool ("isMove", vector3Lerp.isLerping);
 
         if (antActivity == AntActivityState.ChasingEnemy) {
+            inAttackRange = gameModel.instance.Vector2IntEquality(EnemyAnt.InMapV3Pos, InMapV3Pos);
+
+            //發現目標超過攻擊範圍就設定追擊路徑
+            if (!inAttackRange) {
+                Destination = EnemyAnt.InMapV3Pos;
+                startLerpToDestination();
+            }
+
+
             if (inAttackRange && EnemyAnt) {
                 if (!firstTimeFindEnemy) {
                     //on hit
@@ -103,44 +157,60 @@ public class Ant : MonoBehaviour {
                 }
 
                 fightingOtherAnts(EnemyAnt);
-            } else {
+            } else if (!EnemyAnt) {
                 //如目標敵人死掉就還原工作
                 if (firstTimeFindEnemy) {
-                    endChaseEnemy();
+                    //再試試找敵人
+                    updateTarget();
                 }
             }
         }
-        
+
         //如自己以死掉
         if (alreadyDead) {
             //destroy self
-            Destroy(gameObject);
+            OnDead();
         }
 
         //CD計算器
         attackCD();
+
+        if (resistOrderCoolDown <= 0) {
+            resistOrder = false;
+        } else {
+            resistOrderCoolDown -= Time.deltaTime;
+        }
+
     }
 
     void fightingOtherAnts(Ant target) {
-
-
         //attacking enemy
-        if (!alreadyDead) {
-            if (curCD <= 0) {
-                curCD = attackCooldown;
-                OnAttackOtherAnts(target, Damage);
-            }
+        if (curCD <= 0) {
+            curCD = attackCooldown;
+            OnAttackOtherAnts(target, Damage);
         }
     }
 
     void updateTarget() {
         //未發現敵人
         if (!EnemyAnt) {
-            //看過四周看看有沒有敵人
+
+            /*
+            //先看自己這一格有沒有敵人
             if (isFriendly) {
-                EnemyAnt = gameModel.instance.getSingleAnt_EnemyInRange(InMapV3Pos, 3);
+                EnemyAnt = gameModel.instance.getSingleAnt_EnemyInRange(InMapV3Pos, 1);
             } else {
-                EnemyAnt = gameModel.instance.getSingleAntInRange(InMapV3Pos, 3);
+                EnemyAnt = gameModel.instance.getSingleAntInRange(InMapV3Pos, 1);
+            }
+            */
+
+            if (!EnemyAnt) {
+                //看過四周看看有沒有敵人
+                if (isFriendly) {
+                    EnemyAnt = gameModel.instance.getSingleAnt_EnemyInRange(InMapV3Pos, 3);
+                } else {
+                    EnemyAnt = gameModel.instance.getSingleAntInRange(InMapV3Pos, 3);
+                }
             }
         }
 
@@ -165,6 +235,7 @@ public class Ant : MonoBehaviour {
                     EnemyAnt = SecEnemyAnt;
                     Destination = EnemyAnt.InMapV3Pos;
                     inAttackRange = true;
+                    //OnLockDownEnemy();
                 }
             }
         }
@@ -174,36 +245,7 @@ public class Ant : MonoBehaviour {
         }
     }
 
-    void updateWorkJob() {
-        if (antActivity == AntActivityState.ChasingEnemy || antMiningActivity == AntMiningActivityState.returnToBase || !isFriendly) {
-            return;
-        }
 
-        if (!targetMine) {
-            targetMine = gameModel.instance.getSingleMineInRange(InMapV3Pos, 3);
-        }
-
-
-        if (targetMine) {
-            if (targetMine.resource >= 5) {
-                //需要為目前地板留多一個足跡
-                pathRecord.path.Add(InMapV3Pos);
-
-                inAttackRange = gameModel.instance.Vector2IntEquality(targetMine.InMapV3Pos, InMapV3Pos);
-
-                antActivity = AntActivityState.miningResource;
-                antMiningActivity = AntMiningActivityState.goingToMine;
-                setDestinationToMine();
-                
-            } else {
-                //沒有礦了 
-                antActivity = AntActivityState.WalkingAround;
-                antMiningActivity = AntMiningActivityState.none;
-            }
-
-        } 
-   
-    }
     void attackCD() {
         if (curCD > 0) {
             curCD -= globalVarManager.deltaTime;
@@ -213,14 +255,13 @@ public class Ant : MonoBehaviour {
     //發現敵人鎖定目標
     public void OnLockDownEnemy() {
         firstTimeFindEnemy = true;
-        //StopAllCoroutines();
-        cutOffCurMovement();
+        //cutOffCurMovement();
 
         if (isFriendly) {
 
             //callingAlly();
         }
-        transform.rotation = faceAt(EnemyAnt.transform.position);
+        _transform.rotation = faceAt(EnemyAnt._transform.position);
     }
 
     void callingAlly() {
@@ -239,23 +280,28 @@ public class Ant : MonoBehaviour {
 
     public void OnAttackOtherAnts(Ant target, int damage) {
         //AntAni.SetTrigger("isAttack");
-        transform.rotation = faceAt(target.transform.position);
+        _transform.rotation = faceAt(target._transform.position);
         target.OnUnderAttackOtherAnts(damage, this);
     }
 
     public void OnAttackTargetAntDead() {
-        endChaseEnemy();
+        killCount++;
+        //
+        updateTarget();
+        //endChaseEnemy();
     }
 
     void endChaseEnemy() {
         antActivity = AntActivityState.WalkingAround;
         EnemyAnt = null;
         inAttackRange = false;
+        firstTimeFindEnemy = false;
         resetActivityToNormal();
     }
 
-    void resetActivityToNormal() {
+    public void resetActivityToNormal() {
         //重新無所事事游走
+        pathCounter = 0;
         findNewPath();
         startLerpToDestination();
     }
@@ -269,7 +315,10 @@ public class Ant : MonoBehaviour {
         }
 
         if (!EnemyAnt) {
+
             EnemyAnt = from;
+            antActivity = AntActivityState.ChasingEnemy;
+            Destination = EnemyAnt.InMapV3Pos;
             inAttackRange = true;
         }
     }
@@ -277,7 +326,7 @@ public class Ant : MonoBehaviour {
     //取消現在所有行動
     public void cutOffCurMovement() {
         StopAllCoroutines();
-        vector3Lerp = new vector3Lerp();
+        vector3Lerp = new AntV3Lerp(this);
     }
 
     bool onDestination;
@@ -285,130 +334,70 @@ public class Ant : MonoBehaviour {
     //直往目的地
     void toDestination() {
         if (vector3Lerp.isLerping) {
-            transform.rotation = faceAt(pathfindedV3);
-            transform.position = vector3Lerp.update();
+            _transform.rotation = faceAt(pathfindedV3);
+            _transform.position = vector3Lerp.update();
         }
     }
 
     Quaternion faceAt(Vector3 pos) {
-        Vector3 toTargetVector = pos - transform.position;
+        Vector3 toTargetVector = pos - _transform.position;
         float zRotation = Mathf.Atan2(toTargetVector.y, toTargetVector.x) * Mathf.Rad2Deg;
         return Quaternion.Euler(new Vector3(0, 0, zRotation + -90));
     }
 
     public void startLerpToDestination() {
         createPath(Destination);
-        vector3Lerp.startLerp(transform.position, pathfindedV3, runSpeed, null, onArrivalsDestination);
+        vector3Lerp.startLerp(_transform.position, pathfindedV3, runSpeed);
         //面向角度
     }
 
-    float lasttimeConcentration = 60;
-
     //到達下一格時
-    void onArrivalsDestination() {
-
-        switch (antMiningActivity) {
-            case AntMiningActivityState.none:
-                //如果根本很接近基地，就直接清空數據，當成重新在基地出發
-                if (gameModel.instance.checkIsThereAPointNearby(InMapV3Pos, motherBase.instance.InMapV3Pos, 2)) {
-                    pathRecord = new WalkingPath();
-                    pathRecord.path.Add(motherBase.instance.InMapV3Pos);
-                }
-                //記錄舊路徑
-                pathRecord.path.Add(InMapV3Pos);
-                break;
-            case AntMiningActivityState.returnToBase:
-                returnBaseByRecordPath();
-                break;
-            case AntMiningActivityState.goingToMine:
-                
-                break;
-            case AntMiningActivityState.followTheMinePath:
-                goToMineByRecordPath();
-                break;
-            default:
-                break;
-        }
-
-
+    public virtual void onArrivalsDestination() {
         //更新單位資料
         updateObjectMapInformation();
 
         updateTarget();
-        updateWorkJob();
 
-        leaveSomeSmell();
+        chooseNextDestinationAndPath();
 
-        if (antMiningActivity == AntMiningActivityState.goingToMine) {
-            if (inAttackRange) {
-                //採集
-                if (targetMine.resource >= 5) {
-                    inventory += 5;
-                    targetMine.resource -= inventory;
-                    if (targetMine.resource <= 0) {
-                        isLastOne = true;
-                    }
-
-                    //先設回記憶路徑最末端
-                    pathCounter = pathRecord.path.Count - 1;
-                    returnBaseByRecordPath();
+    }
 
 
-                    antMiningActivity = AntMiningActivityState.returnToBase;
-                    inAttackRange = false;
-                    targetMine = null;
-
-                    //setDestinationToHeart();
-
-              
-                    startLerpToDestination();
-                } else {
-                    //根本沒有礦物
-                    inAttackRange = false;
-                    targetMine = null;
-                    antMiningActivity = AntMiningActivityState.none;
-                    antActivity = AntActivityState.WalkingAround;
-                    resetActivityToNormal();
-                }
-            }
-        }
-
-        //暫時
-        if (antMiningActivity == AntMiningActivityState.returnToBase) {
-            inAttackRange = gameModel.instance.Vector2IntEquality(motherBase.instance.InMapV3Pos, InMapV3Pos);
-            if (inAttackRange) {
-                gameModel.instance.resource += inventory;
-                inventory = 0;
-
-                if (isLastOne) {
-                    //當這蟻已知礦已用完，那他就告之motherBase已用完，然後等motherBase處理
-                    motherBase.instance.OnSomeMineIsEmpty(pathRecord.serialNumber);
-                    isLastOne = false;
-                } else {
-                    //礦未用完就跟motherBase新路徑內容
-                    print(pathRecord.path.Count);
-                    motherBase.instance.addNewMinePath(pathRecord.path);
-                }
-
-             
-                //清空記憶
-                pathRecord = new WalkingPath();
-
-                inAttackRange = false;
-                antMiningActivity = AntMiningActivityState.none;
-                antActivity = AntActivityState.WalkingAround;
-                resetActivityToNormal();
-
-            }
-        }
-
+    public void chooseNextDestinationAndPath() {
         if (pathfindedInt != Destination) {
             //如果還有目的地就繼續走動
             startLerpToDestination();
         } else {
             //所有目的地已經到達
-            findNewPath();
-            StartCoroutine(enumerator());
+
+            //如果蟻正在掘礦，那移動方式會跟正常的不一樣
+            if (antActivity == AntActivityState.miningResource) {
+                switch (antMiningActivity) {
+                    case AntMiningActivityState.followTheMinePath:
+                        goToMineByRecordPath();
+                        break;
+                    case AntMiningActivityState.returnToBase:
+                        returnBaseByRecordPath();
+                        break;
+                }
+                startLerpToDestination();
+            } else {
+
+                if (antActivity == AntActivityState.ChasingEnemy) {
+                    if (!(inAttackRange && EnemyAnt)) {
+                        //隨機選擇新坐標 並給予停頓才往下一目標前進
+                        findNewPath();
+                        startLerpToDestination();
+                        //現在先將"StartCoroutine"功能(停在格子休閒)停下來
+                        //StartCoroutine(enumerator());
+                    }
+                } else {
+                    findNewPath();
+                    startLerpToDestination();
+                }
+
+            }
+
         }
     }
 
@@ -421,7 +410,7 @@ public class Ant : MonoBehaviour {
         }
     }
 
-    void returnBaseByRecordPath() {
+    public void returnBaseByRecordPath() {
         if (pathCounter <= 0) {
             return;
         }
@@ -429,26 +418,47 @@ public class Ant : MonoBehaviour {
         Destination = pathRecord.path[ pathCounter ];
     }
 
-    void goToMineByRecordPath() {
-        if (pathCounter >= pathRecord.path.Count-1) {
+    public void goToMineByRecordPath() {
+        if (pathCounter >= pathRecord.path.Count - 1) {
             return;
         }
         pathCounter++;
         Destination = pathRecord.path[ pathCounter ];
     }
 
+    bool randWalkSmellRecord = false;
+    bool FollowMinePathSmellRecord = false;
+
     //更新坐標
-    void updateObjectMapInformation() {
+    public void updateObjectMapInformation() {
         //移除與註冊
-        gameModel.instance.getFloorDatas(InMapV3Pos).UnregisterAntData(this, isFriendly);
+        floorData oldFloorData = gameModel.instance.getFloorDatas(InMapV3Pos);
+        oldFloorData.UnregisterAntData(this, isFriendly);
+        if (randWalkSmellRecord) {
+            oldFloorData.UnregisterRandWalkAntData(this);
+            randWalkSmellRecord = false;
+        }
+        if (FollowMinePathSmellRecord) {
+            oldFloorData.UnregisterFollowMinePathAntData(this);
+            FollowMinePathSmellRecord = false;
+        }
 
-        InMapV3Pos = gameModel.instance.charWorldToMapV3(transform);
+        InMapV3Pos = gameModel.instance.charWorldToMapV3(_transform);
 
-        gameModel.instance.getFloorDatas(InMapV3Pos).RegisterAntData(this, isFriendly);
+        floorData newFloorData = gameModel.instance.getFloorDatas(InMapV3Pos);
+        newFloorData.RegisterAntData(this, isFriendly);
+        if (antActivity == AntActivityState.WalkingAround) {
+            newFloorData.RegisterRandWalkAntData(this);
+            randWalkSmellRecord = true;
+        }
+        if (antMiningActivity == AntMiningActivityState.followTheMinePath) {
+            newFloorData.RegisterFollowMinePathAntData(this);
+            FollowMinePathSmellRecord = true;
+        }
     }
 
     //找出下個四處亂走路徑
-    void findNewPath() {
+    public void findNewPath() {
         setDestinationToRandomPoint();
     }
 
@@ -466,23 +476,10 @@ public class Ant : MonoBehaviour {
     }
 
     void setDestinationToRandomPoint() {
-        //Vector2Int randomMapv3 = gameModel.instance.genRandomMapV3();
-        float angle = Random.Range(0, 360);
-        int movableArea = gameModel.instance.mapRadius;
-        Vector2Int randomMapv3 = polarCoordinates(motherBase.instance.InMapV3Pos, angle, (int)(getLengthForDeg(angle) * Random.Range(0, movableArea)));
-        //Vector2Int randomMapv3 = polarCoordinates(gameModel.instance.dungeonHeartV2Point, angle, (int)(getLengthForDeg(angle) * proportionRandom(movableArea, 5)) );
-        Destination = randomMapv3;
-        //Vector2Int randomMapv3 = polarCoordinates(new Vector2Int((1+21)/2,(-9+7)/2 ) ,Random.Range(0,360), proportionRandom(36,6) );
-        /*
-        if (gameModel.instance.checkThisVectorIntIsWall(randomMapv3)) {
-            getNextMoveableDestination();
-        }
-        */
+        Destination = gameModel.instance.getRandomPoint();
     }
 
-    public void setDestinationToMine() {
-        Destination = targetMine.InMapV3Pos;
-    }
+
 
     public void setDestinationToHeart() {
         Destination = motherBase.instance.InMapV3Pos;
@@ -509,31 +506,23 @@ public class Ant : MonoBehaviour {
         return (result * (maxVal / equalParts)) - Random.Range(0, (maxVal / equalParts));
     }
 
-    Vector2Int polarCoordinates(Vector2Int orl_point, float angle, int dist) {
-        float x = dist * Mathf.Cos(angle * Mathf.Deg2Rad);
-        float y = dist * Mathf.Sin(angle * Mathf.Deg2Rad);
-        Vector2 newPosition = orl_point;
-        newPosition.x += x;
-        newPosition.y += y;
-        return Vector2Int.CeilToInt(newPosition);
-    }
-    Vector2Int polarCoordinatesButSquare(Vector2Int orl_point, float angle, int dist) {
-        float radius = dist * Mathf.Cos(Mathf.PI / 4);
-        float x = orl_point.x + radius * Mathf.Cos(angle);
-        float y = orl_point.y + radius * Mathf.Sin(angle);
-        return Vector2Int.CeilToInt(new Vector2(x, y));
+
+
+   
+
+    public IEnumerator enumerator() {
+        yield return new WaitForSeconds(0);
+        //yield return new WaitForSeconds(Random.Range(7 + gameModel.instance.delayer, 15 + gameModel.instance.delayer));
+
     }
 
-    float getLengthForDeg(float angle) {
-        angle = ((angle + 45) % 90 - 45) / 180 * Mathf.PI;
-        return 1 / Mathf.Cos(angle);
-    }
-
-    IEnumerator enumerator() {
-
-        yield return new WaitForSeconds(Random.Range(7 + gameModel.instance.delayer, 15 + gameModel.instance.delayer));
-
-        startLerpToDestination();
+   public bool acceptOrderProbabilityDetermination() {
+        bool output = gameModel.instance.successRateCalculation(100 - AutonomyLevel);
+        if (!output) {
+            resistOrder = true;
+            resistOrderCoolDown = 2.0f;
+        }
+        return output;
     }
 
 }

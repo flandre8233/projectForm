@@ -188,18 +188,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55a71d39de72b9c42ad0e730e6bdf2cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  antActivity: 0
+  antMiningActivity: 0
   HP: 5
   Damage: 1
+  avgWalkTimeBetweenGridAndGrid: 1.2
+  walkTimeRandomGap: 0.3
   attackCooldown: 2
+  curCD: 0
+  killCount: 0
   isFriendly: 0
   alreadyDead: 0
   Destination: {x: 0, y: 0}
   InMapV3Pos: {x: 0, y: 0}
+  pathRecord:
+    path: []
+    serialNumber: 0
+  pathCounter: 0
   pathfindedInt: {x: 0, y: 0}
   pathfindedV3: {x: 0, y: 0, z: 0}
-  targetEnemy: {fileID: 0}
-  AntAni: {fileID: 95308224629488594}
   EnemyAnt: {fileID: 0}
+  AntAni: {fileID: 95308224629488594}
+  inAttackRange: 0
 --- !u!137 &137889481131457436
 SkinnedMeshRenderer:
   m_ObjectHideFlags: 1

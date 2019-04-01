@@ -6,11 +6,25 @@ using UnityEngine;
 //這是為unity的lerp系統加以開發的系統，用者要先命名一個class承繼lerpMoveSystem，再把d oPart(ref Vector3 startVar, ref Vector3 endVar, ref float curvedValue) override掉如下例子
 //然後把update放入每幀都會更新的程式碼 例：void Update()就可
 
+public delegate void lerpMoveDelegate();
+
 public class testVector3Lerp : vector3Lerp {
     public override void startExtraCode() {
     }
     public override void endExtraCode() {
         //TESTLERP.instance.counter++;
+    }
+}
+
+public class AntV3Lerp : vector3Lerp {
+    public AntV3Lerp(Ant ant) {
+        _ant = ant;
+    }
+
+
+    Ant _ant;
+    public override void endExtraCode() {
+        _ant.onArrivalsDestination();
     }
 }
 
@@ -56,7 +70,6 @@ public abstract class lerpMoveSystem<T> {
     float moveNeedTime = 0f;
     float lerpTime;
     float _curvedValue;
-    public delegate void lerpMoveDelegate();
     lerpMoveDelegate onStartDg;
     lerpMoveDelegate onEndDg;
     AnimationCurve aniCurve;

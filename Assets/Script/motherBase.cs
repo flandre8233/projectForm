@@ -5,12 +5,11 @@ using UnityEngine;
 public class motherBase : building {
     public static motherBase instance;
 
-    [SerializeField]
-    List<WalkingPath> walkToMinePaths;
+    WalkingPath newWalkPathToMineReport;
 
-    public override void init() {
+    public override void init(Vector2Int initObjectMapV2) {
 
-        base.init();
+        base.init(initObjectMapV2);
 
         if (!instance) {
             instance = this;
@@ -23,30 +22,35 @@ public class motherBase : building {
 	void Update () {
 	}
 
-    public void addNewMinePath(List<Vector2Int> path) {
-        walkToMinePaths.Add(new WalkingPath(path));
-        print(walkToMinePaths[ walkToMinePaths.Count - 1 ].path.Count);
+    public void addNewMinePath(WalkingPath path) {
+        newWalkPathToMineReport = path;
         OnNewMinePathFinded();
     }
 
     public void OnNewMinePathFinded() {
-        print("new MinePath was be finded");
-        print(walkToMinePaths[ walkToMinePaths.Count - 1 ].path.Count);
         List<Ant> allAntInMotherBase = gameModel.instance.getAntListInRange(InMapV3Pos,2);
         for (int i = 0; i < allAntInMotherBase.Count; i++) {
-            allAntInMotherBase[ i ].pathRecord = walkToMinePaths[walkToMinePaths.Count-1].deepCopyOutputWP();
-
-            allAntInMotherBase[ i ].antActivity = Ant.AntActivityState.miningResource;
-            allAntInMotherBase[ i ].antMiningActivity = Ant.AntMiningActivityState.followTheMinePath;
-        }
-    }
-
-    public void OnSomeMineIsEmpty(int mineUID) {
-        for (int i = 0; i < walkToMinePaths.Count; i++) {
-            WalkingPath WP = walkToMinePaths[ i ];
-            if (mineUID==WP.serialNumber) {
-                walkToMinePaths.Remove(WP);
+            MinerAnt item = allAntInMotherBase[ i ].GetComponent<MinerAnt>();
+            if (item == null) {
+                continue;
             }
+            if (item.antActivity != Ant.AntActivityState.WalkingAround) {
+                continue;
+            }
+
+            if (item.resistOrder || !item.acceptOrderProbabilityDetermination()) {
+                continue;
+            }
+
+            item.antActivity = Ant.AntActivityState.miningResource;
+            item.antMiningActivity = Ant.AntMiningActivityState.followTheMinePath;
+
+            item.pathCounter = 1;
+            item.pathRecord = newWalkPathToMineReport.deepCopyOutputWP();
+            item.Destination = item.pathRecord.path[ 1 ];
+            item.chooseNextDestinationAndPath();
+
+            item.GetComponent<SpriteRenderer>().color = Color.yellow;
         }
     }
 

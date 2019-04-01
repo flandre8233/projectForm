@@ -10,12 +10,26 @@ public class gameController : SingletonMonoBehavior<gameController> {
     [SerializeField]
     GameObject antPrefabs;
     [SerializeField]
+    GameObject antMinerPrefabs;
+    [SerializeField]
     GameObject ant_enemyPrefabs;
     [SerializeField]
     GameObject ant_enemyPrefabs_big;
+    [SerializeField]
+    GameObject MineBuilding;
 
     float timer1;
     float timer2;
+
+    //暫放在這裡而已
+    public void spawnMineBuilding(Vector2Int MapPos , int startResource ) {
+        if (startResource <= 0) {
+            return;
+        }
+
+        mine item = Instantiate(MineBuilding).GetComponent<mine>();
+        item.init(MapPos, startResource);
+    }
 
     // Use this for initialization
     void Start() {
@@ -32,13 +46,18 @@ public class gameController : SingletonMonoBehavior<gameController> {
             }
         }
 
-        /*
+        
         GameObject[] MineGameObject = GameObject.FindGameObjectsWithTag("Mine");
         foreach (var item in MineGameObject) {
             mine itemMine = item.GetComponent<mine>();
-            itemMine.init();
+            itemMine.init(itemMine.InMapV3Pos);
         }
-        */
+        GameObject[] MotherBaseGameObject = GameObject.FindGameObjectsWithTag("MotherBase");
+        foreach (var item in MotherBaseGameObject) {
+            motherBase itemMotherBase = item.GetComponent<motherBase>();
+            itemMotherBase.init(itemMotherBase.InMapV3Pos);
+        }
+
 
         for (int i = 0; i < 0; i++) {
             gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs, new Vector3(18, 0, 0), Quaternion.identity).GetComponent<Ant>());
@@ -52,30 +71,51 @@ public class gameController : SingletonMonoBehavior<gameController> {
         gameModel.instance.delayerValUpdate();
 
         globalUpdateManager.instance.registerUpdateDg(ToUpdate);
+
+        CameraHandler.instance.init();
+
+        for (int i = 0; i < 1000; i++) {
+            Ant item = Instantiate(antPrefabs, new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>();
+            gameModel.instance.antList.Add(item);
+            item.addCost(antTypeCost[ 1 ]);
+        }
+        gameModel.instance.delayerValUpdate();
+
+        for (int i = 0; i < 2000; i++) {
+            Ant item = Instantiate(antMinerPrefabs, new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>();
+            gameModel.instance.antList.Add(item);
+            item.addCost(antTypeCost[ 0 ]);
+        }
+        gameModel.instance.delayerValUpdate();
+
     }
 
     void keyboardTest() {
-        mouseClickCommandAntMove();
+        //mouseClickCommandAntMove();
         keyboardSpawnAnt();
-        keyboardSpawnEnemyAnt();
-        keyboardDestroyAllEnemyAnt();
-        keyboardDestroyAllAnt();
-
-        if (Input.GetKeyDown(KeyCode.Q) ) {
-            foreach (var item in gameModel.instance.antList) {
-                item.cutOffCurMovement();
-                item.setDestinationToHeart();
-                item.startLerpToDestination();
-            }
-        }
-
+        keyboardSpawnEnemyAntFromMapEdge();
+        mouseClickSelectAnt();
+        //keyboardSpawnEnemyAnt();
+        //keyboardDestroyAllEnemyAnt();
+        //keyboardDestroyAllAnt();
     }
 
+    [SerializeField]
+    int[] antTypeCost;
+
     void keyboardSpawnAnt() {
-        if (Input.GetKeyDown(KeyCode.Z)) {
-            gameModel.instance.antList.Add(Instantiate(antPrefabs, new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>());
+
+        if (Input.GetKeyDown(KeyCode.Z) && gameModel.instance.checkUnitLimit(1) && gameModel.instance.tryDoSubtractBy(ref gameModel.instance.resource, antTypeCost[0]) ) {
+            Ant item = Instantiate(antMinerPrefabs, new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>();
+            gameModel.instance.antList.Add(item);
+            item.addCost(antTypeCost[ 0 ]);
+
             gameModel.instance.delayerValUpdate();
         }
+
+
+
+        /*
         if (Input.GetKeyDown(KeyCode.X)) {
             for (int i = 0; i < 10; i++) {
                 gameModel.instance.antList.Add(Instantiate(antPrefabs, new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>());
@@ -91,10 +131,11 @@ public class gameController : SingletonMonoBehavior<gameController> {
         }
         if (Input.GetKeyDown(KeyCode.V)) {
             for (int i = 0; i < 1000; i++) {
-                gameModel.instance.antList.Add(Instantiate(antPrefabs, new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>());
+                gameModel.instance.antList.Add(Instantiate(antMinerPrefabs, new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>());
             }
             gameModel.instance.delayerValUpdate();
         }
+        */
     }
     void keyboardSpawnEnemyAnt() {
         if (Input.GetKeyDown(KeyCode.A)) {
@@ -121,6 +162,21 @@ public class gameController : SingletonMonoBehavior<gameController> {
             gameModel.instance.delayerValUpdate();
         }
     }
+
+    void keyboardSpawnEnemyAntFromMapEdge() {
+        if (Input.GetKeyDown(KeyCode.A)) {
+            for (int i = 0; i < 100; i++) {
+                Ant item = Instantiate(ant_enemyPrefabs, gameModel.instance.mapV3ToWorldPos(gameModel.instance.getSingleLineRandom(gameModel.instance.mapRadius + 2)), Quaternion.identity).GetComponent<Ant>();
+                gameModel.instance.ant_enemyList.Add(item);
+                item.setDestinationToHeart();
+
+                gameModel.instance.delayerValUpdate();
+            }
+    
+        }
+        // setDestinationToHeart
+    }
+
     void keyboardDestroyAllEnemyAnt() {
         if (Input.GetKeyDown(KeyCode.G)) {
             for (int i = 0; i < gameModel.instance.ant_enemyList.Count; i++) {
@@ -136,11 +192,14 @@ public class gameController : SingletonMonoBehavior<gameController> {
         }
     }
 
+    Vector2Int getMouseMapPos() {
+        Vector2Int mousePos = gameModel.instance.worldToMapV3(gameCam.ScreenToWorldPoint(Input.mousePosition));
+        return mousePos;
+    }
 
     void mouseClickCommandAntMove() {
         if (Input.GetMouseButtonDown(0)) {
-            Vector2Int mousePos = gameModel.instance.worldToMapV3(gameCam.ScreenToWorldPoint(Input.mousePosition));
-            print(mousePos);
+            Vector2Int mousePos = getMouseMapPos();
             foreach (var item in gameModel.instance.antList) {
                 item.cutOffCurMovement();
                 item.Destination = mousePos;
@@ -149,11 +208,22 @@ public class gameController : SingletonMonoBehavior<gameController> {
         }
     }
 
+    void mouseClickSelectAnt() {
+        if (!CameraHandler.instance.inPan && Input.GetMouseButtonUp(0)) {
+            Vector2Int mousePos = getMouseMapPos();
+            Ant ant = gameModel.instance.checkAntInThisWall(mousePos);
+            if (ant) {
+                ant.alreadyDead = true;
+                print("お前はもう死んでいる");
+            }
+        }
+    }
+
 
     void ToUpdate() {
         //autoSpawn();
         keyboardTest();
-        
+
     }
 
     private void OnDestroy() {
