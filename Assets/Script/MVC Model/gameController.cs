@@ -8,13 +8,9 @@ public class gameController : SingletonMonoBehavior<gameController> {
     Camera gameCam;
 
     [SerializeField]
-    GameObject antPrefabs;
+    GameObject[] antPrefabs;
     [SerializeField]
-    GameObject antMinerPrefabs;
-    [SerializeField]
-    GameObject ant_enemyPrefabs;
-    [SerializeField]
-    GameObject ant_enemyPrefabs_big;
+    GameObject[] ant_enemyPrefabs;
     [SerializeField]
     GameObject MineBuilding;
 
@@ -59,30 +55,23 @@ public class gameController : SingletonMonoBehavior<gameController> {
         }
 
 
-        for (int i = 0; i < 0; i++) {
-            gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs, new Vector3(18, 0, 0), Quaternion.identity).GetComponent<Ant>());
-        }
-        for (int i = 0; i < 0; i++) {
-            gameModel.instance.antList.Add(Instantiate(antPrefabs, new Vector3(3, 0, 0), Quaternion.identity).GetComponent<Ant>());
-        }
-        for (int i = 0; i < 0; i++) {
-            gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs_big, new Vector3(18, 0, 0), Quaternion.identity).GetComponent<Ant>());
-        }
         gameModel.instance.delayerValUpdate();
 
         globalUpdateManager.instance.registerUpdateDg(ToUpdate);
 
         CameraHandler.instance.init();
 
+        /*
         for (int i = 0; i < 1000; i++) {
-            Ant item = Instantiate(antPrefabs, new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>();
+            Ant item = Instantiate(antPrefabs[1], new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>();
             gameModel.instance.antList.Add(item);
             item.addCost(antTypeCost[ 1 ]);
         }
         gameModel.instance.delayerValUpdate();
+        */
 
         for (int i = 0; i < 2000; i++) {
-            Ant item = Instantiate(antMinerPrefabs, new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>();
+            Ant item = Instantiate(antPrefabs[ 0 ], new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>();
             gameModel.instance.antList.Add(item);
             item.addCost(antTypeCost[ 0 ]);
         }
@@ -90,11 +79,33 @@ public class gameController : SingletonMonoBehavior<gameController> {
 
     }
 
+    bool incallback = false;
+
     void keyboardTest() {
         //mouseClickCommandAntMove();
         keyboardSpawnAnt();
-        keyboardSpawnEnemyAntFromMapEdge();
+        keyboardRandomSpawnEnemyAntFromMapEdge();
         mouseClickSelectAnt();
+
+        if (Input.GetKeyDown(KeyCode.B)) {
+            incallback = !incallback;
+            for (int i = 0; i < gameModel.instance.antList.Count; i++) {
+                MinerAnt item = gameModel.instance.antList[i].GetComponent<MinerAnt>();
+                
+
+                if (item) {
+                    if (incallback) {
+                        item.OnCallBack();
+                    }
+                }
+            }
+
+            if (!incallback) {
+                motherBase.instance.OnMinerExit();
+            }
+
+        }
+
         //keyboardSpawnEnemyAnt();
         //keyboardDestroyAllEnemyAnt();
         //keyboardDestroyAllAnt();
@@ -106,7 +117,7 @@ public class gameController : SingletonMonoBehavior<gameController> {
     void keyboardSpawnAnt() {
 
         if (Input.GetKeyDown(KeyCode.Z) && gameModel.instance.checkUnitLimit(1) && gameModel.instance.tryDoSubtractBy(ref gameModel.instance.resource, antTypeCost[0]) ) {
-            Ant item = Instantiate(antMinerPrefabs, new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>();
+            Ant item = Instantiate(antPrefabs[ 0 ], new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>();
             gameModel.instance.antList.Add(item);
             item.addCost(antTypeCost[ 0 ]);
 
@@ -139,34 +150,47 @@ public class gameController : SingletonMonoBehavior<gameController> {
     }
     void keyboardSpawnEnemyAnt() {
         if (Input.GetKeyDown(KeyCode.A)) {
-            gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs, new Vector3(12, 0, 0), Quaternion.identity).GetComponent<Ant>());
+            gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs[ 0 ], new Vector3(12, 0, 0), Quaternion.identity).GetComponent<Ant>());
             gameModel.instance.delayerValUpdate();
         }
         if (Input.GetKeyDown(KeyCode.S)) {
             for (int i = 0; i < 10; i++) {
-                gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs, new Vector3(12, 0, 0), Quaternion.identity).GetComponent<Ant>());
+                gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs[ 0 ], new Vector3(12, 0, 0), Quaternion.identity).GetComponent<Ant>());
             }
             gameModel.instance.delayerValUpdate();
         }
         if (Input.GetKeyDown(KeyCode.D)) {
             for (int i = 0; i < 100; i++) {
-                gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs, new Vector3(12, 0, 0), Quaternion.identity).GetComponent<Ant>());
+                gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs[ 0 ], new Vector3(12, 0, 0), Quaternion.identity).GetComponent<Ant>());
             }
             gameModel.instance.delayerValUpdate();
 
         }
         if (Input.GetKeyDown(KeyCode.F)) {
             for (int i = 0; i < 1000; i++) {
-                gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs, new Vector3(21, 0, 0), Quaternion.identity).GetComponent<Ant>());
+                gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs[ 0 ], new Vector3(21, 0, 0), Quaternion.identity).GetComponent<Ant>());
             }
             gameModel.instance.delayerValUpdate();
+        }
+    }
+
+    void keyboardRandomSpawnEnemyAntFromMapEdge() {
+        if (Input.GetKeyDown(KeyCode.S)) {
+            for (int i = 0; i < 100; i++) {
+                Ant item = Instantiate(ant_enemyPrefabs[ Random.Range(0,ant_enemyPrefabs.Length) ], gameModel.instance.mapV3ToWorldPos(gameModel.instance.getSingleLineRandom(gameModel.instance.mapRadius + 2)), Quaternion.identity).GetComponent<Ant>();
+                gameModel.instance.ant_enemyList.Add(item);
+                item.setDestinationToHeart();
+
+                gameModel.instance.delayerValUpdate();
+            }
+
         }
     }
 
     void keyboardSpawnEnemyAntFromMapEdge() {
         if (Input.GetKeyDown(KeyCode.A)) {
             for (int i = 0; i < 100; i++) {
-                Ant item = Instantiate(ant_enemyPrefabs, gameModel.instance.mapV3ToWorldPos(gameModel.instance.getSingleLineRandom(gameModel.instance.mapRadius + 2)), Quaternion.identity).GetComponent<Ant>();
+                Ant item = Instantiate(ant_enemyPrefabs[ 0 ], gameModel.instance.mapV3ToWorldPos(gameModel.instance.getSingleLineRandom(gameModel.instance.mapRadius + 2)), Quaternion.identity).GetComponent<Ant>();
                 gameModel.instance.ant_enemyList.Add(item);
                 item.setDestinationToHeart();
 
@@ -239,7 +263,7 @@ public class gameController : SingletonMonoBehavior<gameController> {
         if (timer1 - 0.5f > 0) {
             timer1 = 0;
             for (int i = 0; i < spawnNumber * max1; i++) {
-                gameModel.instance.antList.Add(Instantiate(antPrefabs, new Vector3(1, 0, 0), Quaternion.identity).GetComponent<Ant>());
+                gameModel.instance.antList.Add(Instantiate(antPrefabs[ 1 ], new Vector3(1, 0, 0), Quaternion.identity).GetComponent<Ant>());
                 gameModel.instance.delayerValUpdate();
             }
          
@@ -247,7 +271,7 @@ public class gameController : SingletonMonoBehavior<gameController> {
         if (timer2 - 0.5f > 0) {
             timer2 = 0;
             for (int i = 0; i < spawnNumber * max2; i++) {
-                gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs, new Vector3(21, 0, 0), Quaternion.identity).GetComponent<Ant>());
+                gameModel.instance.ant_enemyList.Add(Instantiate(ant_enemyPrefabs[ 0 ], new Vector3(21, 0, 0), Quaternion.identity).GetComponent<Ant>());
                 gameModel.instance.delayerValUpdate();
             }
    

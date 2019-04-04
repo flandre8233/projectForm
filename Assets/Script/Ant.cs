@@ -2,21 +2,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 public class Ant : MonoBehaviour {
+
+    public GameObject inRoom;
+
     public enum AntActivityState {
         WalkingAround,
         ChasingEnemy,
         miningResource
     }
 
-    public enum AntMiningActivityState {
-        none,
-        returnToBase,
-        goingToMine,
-        followTheMinePath
-    }
+
 
     public AntActivityState antActivity;
-    public AntMiningActivityState antMiningActivity;
 
     public int HP;
 
@@ -103,7 +100,7 @@ public class Ant : MonoBehaviour {
         runSpeed = Random.Range(avgWalkTimeBetweenGridAndGrid - walkTimeRandomGap, avgWalkTimeBetweenGridAndGrid + walkTimeRandomGap);
     }
 
-    private void OnDestroy() {
+   public virtual void OnDestroy() {
         globalUpdateManager.instance.UnregisterUpdateDg(ToUpdate);
         if (isFriendly) {
             gameModel.instance.antList.Remove(this);
@@ -116,10 +113,7 @@ public class Ant : MonoBehaviour {
             gameModel.instance.getFloorDatas(InMapV3Pos).UnregisterRandWalkAntData(this);
             randWalkSmellRecord = false;
         }
-        if (FollowMinePathSmellRecord) {
-            gameModel.instance.getFloorDatas(InMapV3Pos).UnregisterFollowMinePathAntData(this);
-            FollowMinePathSmellRecord = false;
-        }
+ 
 
     }
 
@@ -363,26 +357,12 @@ public class Ant : MonoBehaviour {
     }
 
 
-    public void chooseNextDestinationAndPath() {
+    public virtual void chooseNextDestinationAndPath() {
         if (pathfindedInt != Destination) {
             //如果還有目的地就繼續走動
             startLerpToDestination();
         } else {
             //所有目的地已經到達
-
-            //如果蟻正在掘礦，那移動方式會跟正常的不一樣
-            if (antActivity == AntActivityState.miningResource) {
-                switch (antMiningActivity) {
-                    case AntMiningActivityState.followTheMinePath:
-                        goToMineByRecordPath();
-                        break;
-                    case AntMiningActivityState.returnToBase:
-                        returnBaseByRecordPath();
-                        break;
-                }
-                startLerpToDestination();
-            } else {
-
                 if (antActivity == AntActivityState.ChasingEnemy) {
                     if (!(inAttackRange && EnemyAnt)) {
                         //隨機選擇新坐標 並給予停頓才往下一目標前進
@@ -395,9 +375,6 @@ public class Ant : MonoBehaviour {
                     findNewPath();
                     startLerpToDestination();
                 }
-
-            }
-
         }
     }
 
@@ -412,6 +389,7 @@ public class Ant : MonoBehaviour {
 
     public void returnBaseByRecordPath() {
         if (pathCounter <= 0) {
+            setDestinationToHeart();
             return;
         }
         pathCounter--;
@@ -427,10 +405,9 @@ public class Ant : MonoBehaviour {
     }
 
     bool randWalkSmellRecord = false;
-    bool FollowMinePathSmellRecord = false;
 
     //更新坐標
-    public void updateObjectMapInformation() {
+    public virtual void updateObjectMapInformation() {
         //移除與註冊
         floorData oldFloorData = gameModel.instance.getFloorDatas(InMapV3Pos);
         oldFloorData.UnregisterAntData(this, isFriendly);
@@ -438,11 +415,6 @@ public class Ant : MonoBehaviour {
             oldFloorData.UnregisterRandWalkAntData(this);
             randWalkSmellRecord = false;
         }
-        if (FollowMinePathSmellRecord) {
-            oldFloorData.UnregisterFollowMinePathAntData(this);
-            FollowMinePathSmellRecord = false;
-        }
-
         InMapV3Pos = gameModel.instance.charWorldToMapV3(_transform);
 
         floorData newFloorData = gameModel.instance.getFloorDatas(InMapV3Pos);
@@ -451,10 +423,7 @@ public class Ant : MonoBehaviour {
             newFloorData.RegisterRandWalkAntData(this);
             randWalkSmellRecord = true;
         }
-        if (antMiningActivity == AntMiningActivityState.followTheMinePath) {
-            newFloorData.RegisterFollowMinePathAntData(this);
-            FollowMinePathSmellRecord = true;
-        }
+  
     }
 
     //找出下個四處亂走路徑

@@ -192,9 +192,12 @@ MonoBehaviour:
   antMiningActivity: 0
   HP: 5
   Damage: 1
+  cost: 0
+  AutonomyLevel: 0
+  resistOrder: 0
   avgWalkTimeBetweenGridAndGrid: 1
   walkTimeRandomGap: 0.4
-  attackCooldown: 2
+  attackCooldown: 1
   curCD: 0
   killCount: 0
   isFriendly: 1

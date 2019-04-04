@@ -3,6 +3,31 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class MinerAnt : Ant {
+    bool inCallback;
+
+    public void OnCallBack() {
+        inCallback = true;
+   
+        pathCounter = pathRecord.path.Count - 1;
+        returnBaseByRecordPath();
+
+        antMiningActivity = AntMiningActivityState.returnToBase;
+        inAttackRange = false;
+        targetMine = null;
+
+        startLerpToDestination();
+    }
+
+    public void OnResetCallBack() {
+        inCallback = false;
+        if (inventory > 0) {
+            return;
+        } else {
+            antMiningActivity = AntMiningActivityState.none;
+            antActivity = AntActivityState.WalkingAround;
+            resetActivityToNormal();
+        }
+    }
 
     [SerializeField]
     int inventory;
@@ -13,11 +38,28 @@ public class MinerAnt : Ant {
     [ SerializeField]
     mine targetMine;
 
+    bool FollowMinePathSmellRecord = false;
 
+    public enum AntMiningActivityState {
+        none,
+        returnToBase,
+        goingToMine,
+        followTheMinePath
+    }
+
+    public AntMiningActivityState antMiningActivity;
 
     // Use this for initialization
     public override void Start() {
         base.Start();
+    }
+
+    public override void OnDestroy() {
+        base.OnDestroy();
+        if (FollowMinePathSmellRecord) {
+            gameModel.instance.getFloorDatas(InMapV3Pos).UnregisterFollowMinePathAntData(this);
+            FollowMinePathSmellRecord = false;
+        }
     }
 
     public override int getRefundNum() {
@@ -43,7 +85,10 @@ public class MinerAnt : Ant {
                 antMiningActivity = AntMiningActivityState.goingToMine;
                 setDestinationToMine();
 
-        } else {
+        }
+        
+        /*
+        else {
             //沒有礦物，又到達終點時
             if (pathCounter >= pathRecord.path.Count - 1 ) {
                 targetMine = null;
@@ -52,6 +97,9 @@ public class MinerAnt : Ant {
                 GetComponent<SpriteRenderer>().color = Color.blue;
             }
         }
+
+        */
+
     }
 
     void recordPath() {
@@ -122,7 +170,6 @@ public class MinerAnt : Ant {
                 inAttackRange = false;
                 antMiningActivity = AntMiningActivityState.none;
                 antActivity = AntActivityState.WalkingAround;
-                resetActivityToNormal();
 
                 GetComponent<SpriteRenderer>().color = Color.blue;
             }
@@ -130,34 +177,50 @@ public class MinerAnt : Ant {
     }
 
     void CompareOthersMiningPathAndChooseBetterOne() {
-        if (antMiningActivity == AntMiningActivityState.returnToBase) {
+        
+       // if (antMiningActivity == AntMiningActivityState.returnToBase) {
             floorData curFloorData = gameModel.instance.getFloorDatas(InMapV3Pos);
 
-            for (int i = 0; i < curFloorData.ants_FollowMinePath.Count; i++) {
-                MinerAnt item = curFloorData.ants_FollowMinePath[ i ].gameObject.GetComponent<MinerAnt>();
-                WalkingPath itemWalkingPath = item.pathRecord;
-                if (item.antMiningActivity != AntMiningActivityState.followTheMinePath) {
-                    continue;
-                }
-                if (item.pathRecord.serialNumber != pathRecord.serialNumber) {
-                    continue;
-                }
-                
-                if ( (itemWalkingPath.path.Count) > (pathRecord.path.Count)) {
-                    //如果比較目標的掘礦路徑更為長 就跟他說有個更好的
-                    TranPathInfo(item);
-                }
-
+        //ants_FollowMinePath
+        for (int i = 0; i < curFloorData.ants.Count; i++) {
+            MinerAnt item = curFloorData.ants[ i ].gameObject.GetComponent<MinerAnt>();
+            if (!item) {
+                break;
             }
+
+            WalkingPath itemWalkingPath = item.pathRecord;
+            if (itemWalkingPath.path.Count <= 0) {
+                break;
+            }
+            /*
+            if (item.antMiningActivity != AntMiningActivityState.followTheMinePath) {
+                continue;
+            }
+            if (item.pathRecord.serialNumber != pathRecord.serialNumber) {
+                continue;
+            }
+            */
+
+            if ((itemWalkingPath.path.Count) < (pathRecord.path.Count)) {
+                //如果比較目標的掘礦路徑更為短 就偷他的
+                TranPathInfo(item);
+            }
+
         }
+       // }
     }
 
     void TranPathInfo(MinerAnt target) {
-        //給他全新記錄
-        target.pathRecord = new WalkingPath(pathRecord);
-        target.pathCounter = pathCounter;
-        target.Destination = pathRecord.path[ pathCounter ];
-        target.startLerpToDestination();
+        //給自己全新記錄
+       //  target.pathRecord = new WalkingPath(pathRecord);
+        pathRecord = new WalkingPath(target.pathRecord);
+        //target.pathCounter = pathCounter;
+        pathCounter = pathRecord.path.Count-1;
+        if (pathCounter <= 0) {
+            print(pathCounter);
+        }
+        //target.Destination = pathRecord.path[ pathCounter ];
+        // target.startLerpToDestination();
     }
 
         void tellOtherMinerAntIfHaveMine() {
@@ -203,11 +266,10 @@ public class MinerAnt : Ant {
                     item.antMiningActivity = AntMiningActivityState.returnToBase;
                     item.GetComponent<SpriteRenderer>().color = Color.gray;
 
-                    //給他全新記錄
-                    item.pathRecord = new WalkingPath(pathRecord);
-                    item.pathCounter = pathCounter;
-                    item.Destination = pathRecord.path[ pathCounter ];
-
+                        //給他全新記錄
+                        item.pathRecord = new WalkingPath(pathRecord);
+                        item.pathCounter = pathCounter ;
+                        item.Destination = item.pathRecord.path[ item.pathCounter];
                     startLerpToDestination();
                 }
             }
@@ -217,6 +279,45 @@ public class MinerAnt : Ant {
 
     public void setDestinationToMine() {
         Destination = targetMine.InMapV3Pos;
+    }
+
+    public override void updateObjectMapInformation() {
+        base.updateObjectMapInformation();
+        floorData newFloorData = gameModel.instance.getFloorDatas(InMapV3Pos);
+        floorData oldFloorData = gameModel.instance.getFloorDatas(InMapV3Pos);
+        if (FollowMinePathSmellRecord) {
+            oldFloorData.UnregisterFollowMinePathAntData(this);
+            FollowMinePathSmellRecord = false;
+        }
+        if (antMiningActivity == AntMiningActivityState.followTheMinePath) {
+            newFloorData.RegisterFollowMinePathAntData(this);
+            FollowMinePathSmellRecord = true;
+        }
+    }
+
+    public override void chooseNextDestinationAndPath() {
+        if (pathfindedInt != Destination) {
+            //如果還有目的地就繼續走動
+            startLerpToDestination();
+        } else {
+            //所有目的地已經到達
+
+            //如果蟻正在掘礦，那移動方式會跟正常的不一樣
+            switch (antMiningActivity) {
+                case AntMiningActivityState.followTheMinePath:
+                    goToMineByRecordPath();
+                    break;
+                case AntMiningActivityState.returnToBase:
+                    returnBaseByRecordPath();
+                    break;
+            }
+
+            if (antActivity != AntActivityState.miningResource && !inCallback) {
+                findNewPath();
+            }
+            startLerpToDestination();
+
+        }
     }
 
     public override void onArrivalsDestination() {
@@ -233,12 +334,24 @@ public class MinerAnt : Ant {
 
         PlacingResourcesToMotherBase();
 
-        chooseNextDestinationAndPath();
+        inAttackRange = gameModel.instance.Vector2IntEquality(motherBase.instance.InMapV3Pos, InMapV3Pos);
+        if (inAttackRange && inCallback) {
+            motherBase.instance.OnSomeMinerAntEnterMotherBase(this);
+            //目標一定在大本營
+            return;
+        }
 
+        chooseNextDestinationAndPath();
 
         tellOtherMinerAntIfHaveMine();
 
         CompareOthersMiningPathAndChooseBetterOne();
+
+
+
+
+
+
     }
 
 }

@@ -190,8 +190,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   antActivity: 0
   antMiningActivity: 0
-  HP: 5
-  Damage: 1
+  HP: 10
+  Damage: 2
+  cost: 0
   AutonomyLevel: 0
   resistOrder: 0
   avgWalkTimeBetweenGridAndGrid: 1
@@ -297,7 +298,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 8
   m_Sprite: {fileID: 21300000, guid: 70da7d0066042f24e98c268808720166, type: 3}
-  m_Color: {r: 1, g: 0, b: 0.028783798, a: 1}
+  m_Color: {r: 0.9056604, g: 0.36311856, b: 0.37801188, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

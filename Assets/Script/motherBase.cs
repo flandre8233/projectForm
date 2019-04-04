@@ -27,6 +27,37 @@ public class motherBase : building {
         OnNewMinePathFinded();
     }
 
+    [SerializeField]
+    List<MinerAnt> saveMinerAnt;
+
+    public void OnSomeMinerAntEnterMotherBase(MinerAnt minerAnt) {
+        saveMinerAnt.Add(minerAnt);
+        minerAnt.GetComponent<SpriteRenderer>().enabled = false;
+    }
+
+    public void OnMinerExit() {
+            StartCoroutine(MinerExitenumerator());
+        StartCoroutine(MinerExitenumerator());
+        StartCoroutine(MinerExitenumerator());
+        StartCoroutine(MinerExitenumerator());
+        StartCoroutine(MinerExitenumerator());
+
+
+    }
+    IEnumerator MinerExitenumerator( ) {
+
+        while (saveMinerAnt.Count > 0) {
+                yield return new WaitForSeconds(0.001f);
+            if (saveMinerAnt.Count <= 0) {
+                break;
+            }
+            MinerAnt item = saveMinerAnt[ saveMinerAnt.Count - 1 ];
+            item.GetComponent<SpriteRenderer>().enabled = true;
+            item.OnResetCallBack();
+            saveMinerAnt.RemoveAt(saveMinerAnt.Count - 1);
+        }
+
+    }
     public void OnNewMinePathFinded() {
         List<Ant> allAntInMotherBase = gameModel.instance.getAntListInRange(InMapV3Pos,2);
         for (int i = 0; i < allAntInMotherBase.Count; i++) {
@@ -43,7 +74,7 @@ public class motherBase : building {
             }
 
             item.antActivity = Ant.AntActivityState.miningResource;
-            item.antMiningActivity = Ant.AntMiningActivityState.followTheMinePath;
+            item.antMiningActivity = MinerAnt.AntMiningActivityState.followTheMinePath;
 
             item.pathCounter = 1;
             item.pathRecord = newWalkPathToMineReport.deepCopyOutputWP();
