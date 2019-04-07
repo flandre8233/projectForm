@@ -4,14 +4,27 @@ using UnityEngine;
 
 [DisallowMultipleComponent]
 public  class globalUpdateManager : SingletonMonoBehavior<globalUpdateManager> {
+
+    [Range(0, 15)]
+    [SerializeField]
+     float timeSpeed = 1;
+
     public delegate void updateDelegate();
     public updateDelegate globalUpdateDg;
+
+
+
     // Update is called once per frame
     void Update() {
         updateDeltaTimeData();
         if (globalUpdateDg != null) {
             globalUpdateDg.Invoke();
         }
+    }
+
+    public void setTimeSpeed()
+    {
+        Time.timeScale = timeSpeed;
     }
 
     void updateDeltaTimeData() {
@@ -36,4 +49,16 @@ public  class globalUpdateManager : SingletonMonoBehavior<globalUpdateManager> {
             delg -= (updateDelegate)d;
         }
     }
+
+    public void startGlobalTimer(float time, updateDelegate onEndFunction)
+    {
+        StartCoroutine(globalTimer(time,onEndFunction));
+    }
+
+    IEnumerator globalTimer(float time,updateDelegate onEndFunction)
+    {
+        yield return new WaitForSeconds(time);
+        onEndFunction();
+    }
+
 }

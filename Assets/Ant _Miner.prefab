@@ -188,8 +188,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4dd5a0d3fd0be841b3e2b6985c8939c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  normalStateColor: {r: 0, g: 0, b: 0, a: 0}
+  inRoom: {fileID: 0}
   antActivity: 0
-  antMiningActivity: 0
   HP: 10
   Damage: 0
   cost: 0
@@ -213,9 +214,12 @@ MonoBehaviour:
   EnemyAnt: {fileID: 0}
   AntAni: {fileID: 0}
   inAttackRange: 0
+  randWalkSmellRecord: 0
   inventory: 0
   resourceCollectionAbility: 5
+  miningNeedTime: 1
   targetMine: {fileID: 0}
+  _antMiningActivity: 0
 --- !u!137 &137316377971208090
 SkinnedMeshRenderer:
   m_ObjectHideFlags: 1

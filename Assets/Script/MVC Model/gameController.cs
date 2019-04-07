@@ -61,16 +61,16 @@ public class gameController : SingletonMonoBehavior<gameController> {
 
         CameraHandler.instance.init();
 
-        /*
+        
         for (int i = 0; i < 1000; i++) {
             Ant item = Instantiate(antPrefabs[1], new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>();
             gameModel.instance.antList.Add(item);
             item.addCost(antTypeCost[ 1 ]);
         }
         gameModel.instance.delayerValUpdate();
-        */
+        
 
-        for (int i = 0; i < 2000; i++) {
+        for (int i = 0; i < 1000; i++) {
             Ant item = Instantiate(antPrefabs[ 0 ], new Vector3(0, 0, 0), Quaternion.identity).GetComponent<Ant>();
             gameModel.instance.antList.Add(item);
             item.addCost(antTypeCost[ 0 ]);
@@ -104,6 +104,11 @@ public class gameController : SingletonMonoBehavior<gameController> {
                 motherBase.instance.OnMinerExit();
             }
 
+        }
+
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            globalUpdateManager.instance.setTimeSpeed();
         }
 
         //keyboardSpawnEnemyAnt();

@@ -1,7 +1,9 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Random = UnityEngine.Random;
 
 [System.Serializable]
 public class WalkingPath {
@@ -164,12 +166,6 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
         return worldToMapV3(Ts.position);
     }
 
-    public Vector2Int genRandomMapV3() {
-        Vector2Int res = new Vector2Int();
-        res.x = Random.Range(1,21);
-        res.y = Random.Range(-9,7);
-        return res;
-    }
     
     public float twoPointAngles(Vector3 p1,Vector3 p2) {
         float angleDeg = Mathf.Atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Mathf.PI;
@@ -241,6 +237,27 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
         return true;
     }
 
+    public List<attackerAnt> getAttackerAntListInRange(Vector2Int pos, float range)
+    {
+        List<attackerAnt> result = new List<attackerAnt>();
+        int R = (int)range;
+        List<attackerAnt> ants = new List<attackerAnt>();
+        for (int x = -R; x < R; x++)
+        {
+            for (int y = -R; y < R; y++)
+            {
+                ants.AddRange(getFloorDatas(new Vector2Int(pos.x + x, pos.y + y)).ants_Attacker);
+            }
+        }
+
+        int count = ants.Count;
+        for (int i = 0; i < count; i++)
+        {
+            attackerAnt item = ants[i];
+            result.Add(item);
+        }
+        return result;
+    }
     public List<Ant> getAntListInRange(Vector2Int pos,float range) {
         List<Ant> result = new List<Ant>();
         int R = (int)range;
@@ -322,7 +339,12 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
     }
 
     public Vector2Int getRandomPoint() {
-        return getSingleLineRandom(Random.Range(0, mapRadius)); ;
+        return getRandomPoint(0, mapRadius);
+    }
+
+    public Vector2Int getRandomPoint(int minLine, int maxLine)
+    {
+        return getSingleLineRandom(Random.Range(minLine, maxLine)) ;
     }
 
     float getLengthForDeg(float angle) {
@@ -343,6 +365,13 @@ public class gameModel : SingletonMonoBehavior<gameModel> {
         float x = orl_point.x + radius * Mathf.Cos(angle);
         float y = orl_point.y + radius * Mathf.Sin(angle);
         return Vector2Int.CeilToInt(new Vector2(x, y));
+    }
+
+    public List<T> GetEnumList<T>()
+    {
+        T[] array = (T[])Enum.GetValues(typeof(T));
+        List<T> list = new List<T>(array);
+        return list;
     }
 
 }

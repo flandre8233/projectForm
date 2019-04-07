@@ -6,7 +6,8 @@ public class floorData {
     public floorSmell floorSmell;
     public List<Ant> ants;
     public List<Ant> ants_RandWalk;
-    public List<Ant> ants_FollowMinePath;
+    public List<MinerAnt> ants_FollowMinePath;
+    public List<attackerAnt> ants_Attacker;
 
     public List<Ant> enemyAnts;
     public mine mine;
@@ -15,7 +16,18 @@ public class floorData {
         ants = new List<Ant>();
         enemyAnts = new List<Ant>();
         ants_RandWalk = new List<Ant>();
-        ants_FollowMinePath = new List<Ant>();
+        ants_FollowMinePath = new List<MinerAnt>();
+        ants_Attacker = new List<attackerAnt>();
+    }
+
+    public void RegisterAnts_AttackerData(attackerAnt ant)
+    {
+        ants_Attacker.Add(ant);
+    }
+
+    public void UnregisterAnts_AttackerData(attackerAnt ant)
+    {
+        ants_Attacker.Remove(ant);
     }
 
     public void RegisterRandWalkAntData(Ant ant) {
@@ -26,11 +38,11 @@ public class floorData {
         ants_RandWalk.Remove(ant);
     }
 
-    public void RegisterFollowMinePathAntData(Ant ant) {
+    public void RegisterFollowMinePathAntData(MinerAnt ant) {
         ants_FollowMinePath.Add(ant);
     }
 
-    public void UnregisterFollowMinePathAntData(Ant ant) {
+    public void UnregisterFollowMinePathAntData(MinerAnt ant) {
         ants_FollowMinePath.Remove(ant);
     }
 

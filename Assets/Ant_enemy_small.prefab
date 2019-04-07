@@ -36,7 +36,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4801476673913520}
   - component: {fileID: 212492412551708178}
-  - component: {fileID: 114479843303476426}
+  - component: {fileID: 114945699246274710}
   m_Layer: 0
   m_Name: Ant_enemy_small
   m_TagString: Ant
@@ -177,7 +177,7 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
---- !u!114 &114479843303476426
+--- !u!114 &114945699246274710
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -185,21 +185,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 1198665427115890}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55a71d39de72b9c42ad0e730e6bdf2cb, type: 3}
+  m_Script: {fileID: 11500000, guid: 91377f8e4fd53294ea3f97aebcd75cac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  normalStateColor: {r: 0, g: 0, b: 0, a: 0}
+  inRoom: {fileID: 0}
   antActivity: 0
-  antMiningActivity: 0
   HP: 4
-  Damage: 2
-  cost: 0
-  AutonomyLevel: 0
   resistOrder: 0
+  inAttackRange: 0
+  cost: 4
+  AutonomyLevel: 0
   avgWalkTimeBetweenGridAndGrid: 1
-  walkTimeRandomGap: 0.3
-  attackCooldown: 1
-  curCD: 0
-  killCount: 0
+  walkTimeRandomGap: 0.5
   isFriendly: 0
   alreadyDead: 0
   Destination: {x: 0, y: 0}
@@ -210,9 +208,15 @@ MonoBehaviour:
   pathCounter: 0
   pathfindedInt: {x: 0, y: 0}
   pathfindedV3: {x: 0, y: 0, z: 0}
+  AntAni: {fileID: 0}
+  randWalkSmellRecord: 0
+  AttackerStyle: 0
+  killCount: 0
+  Damage: 2
+  attackCooldown: 1
+  inAttackCd: 0
+  isScout: 0
   EnemyAnt: {fileID: 0}
-  AntAni: {fileID: 95308224629488594}
-  inAttackRange: 0
 --- !u!137 &137889481131457436
 SkinnedMeshRenderer:
   m_ObjectHideFlags: 1

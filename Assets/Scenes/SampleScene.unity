@@ -381,6 +381,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   InMapV3Pos: {x: 0, y: 0}
   UID: 0
+  saveMinerAnt: []
 --- !u!4 &291238587
 Transform:
   m_ObjectHideFlags: 0
@@ -599,6 +600,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1d8a422dced20a44b6085d491dee813, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  timeSpeed: 1
 --- !u!4 &688633072
 Transform:
   m_ObjectHideFlags: 0
@@ -1487,9 +1489,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ad96d00eb055c240939ea5e52fc46cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  InMapV3Pos: {x: 5, y: 5}
+  InMapV3Pos: {x: 10, y: 10}
   UID: 0
-  resource: 50
+  resource: 50000
 --- !u!4 &776679487
 Transform:
   m_ObjectHideFlags: 0
